@@ -111,6 +111,12 @@ header h1 span{color:var(--accent)}
       <button v-for="s in sortOptions" :key="s.key" class="sort-btn" :class="{active: sortBy === s.key}" @click="sortBy = s.key">{{ s.label }}</button>
     </div>
 
+    <!-- Chain Filter -->
+    <div class="sort-bar">
+      <button class="sort-btn" :class="{active: chainFilter === 'all'}" @click="chainFilter = 'all'">🌐 All</button>
+      <button v-for="c in chains" :key="c" class="sort-btn" :class="{active: chainFilter === c}" @click="chainFilter = c">{{ c }}</button>
+    </div>
+
     <!-- Loading -->
     <div v-if="loading" class="loading">⏳ Scanning...</div>
 
@@ -217,6 +223,7 @@ createApp({
     const loading = ref(false);
     const searchInput = ref('');
     const sortBy = ref('score');
+    const chainFilter = ref('all');
     const detail = ref(null);
 
     const sortOptions = [
@@ -319,8 +326,19 @@ createApp({
       };
     });
 
+    const chains = computed(() => {
+      const unique = [...new Set(tokens.value.map(t => t.chain).filter(Boolean))];
+      return unique.sort();
+    });
+
     const sortedTokens = computed(() => {
-      const t = [...tokens.value];
+      let t = tokens.value;
+      // Chain filter
+      if (chainFilter.value !== 'all') {
+        t = t.filter(x => x.chain === chainFilter.value);
+      }
+      // Sort
+      t = [...t];
       if (sortBy.value === 'score') t.sort((a,b) => b.score - a.score);
       else if (sortBy.value === 'newest') t.sort((a,b) => (b.age_days||999) - (a.age_days||999));
       else if (sortBy.value === 'volume') t.sort((a,b) => (b.volume||0) - (a.volume||0));
@@ -329,7 +347,7 @@ createApp({
 
     onMounted(fetchTokens);
 
-    return { tokens, loading, searchInput, sortBy, sortOptions, detail,
+    return { tokens, loading, searchInput, sortBy, chainFilter, chains, sortOptions, detail,
              fetchTokens, trackToken, refreshAll, showDetail,
              priceClass, scoreClass, scoreColor, recColor, formatPrice, formatNum, stats, sortedTokens };
   }
