@@ -73,6 +73,93 @@
     gap: 16px;
   }
 
+  /* Alert bell */
+  .alert-bell {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+  }
+  .alert-bell:hover { border-color: var(--orange); }
+  .alert-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: var(--red);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+  }
+
+  .alert-panel {
+    display: none;
+    position: fixed;
+    top: 56px; right: 24px;
+    width: 360px;
+    max-height: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 200;
+    overflow: hidden;
+  }
+  .alert-panel.open { display: block; }
+
+  .alert-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .alert-close {
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .alert-close:hover { color: var(--red); }
+
+  .alert-list {
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .alert-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .alert-item.pump { border-left: 3px solid var(--green); }
+  .alert-item.dump { border-left: 3px solid var(--red); }
+  .alert-item.score_drop { border-left: 3px solid var(--yellow); }
+  .alert-item.new_token { border-left: 3px solid var(--blue); }
+  .alert-item .alert-time {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
   .last-refresh {
     font-size: 11px;
     font-family: var(--mono);
@@ -354,6 +441,31 @@
     padding: 1px 6px;
     border-radius: 4px;
     margin-top: 3px;
+  }
+
+  .external-links {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .link-icon {
+    font-size: 13px;
+    text-decoration: none;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+    cursor: pointer;
+  }
+  .link-icon:hover { opacity: 1; }
+
+  /* Sparkline */
+  .sparkline-wrap {
+    margin-top: 6px;
+    position: relative;
+  }
+  .sparkline-canvas {
+    width: 100px;
+    height: 28px;
+    display: block;
   }
 
   .token-right { text-align: right; flex-shrink: 0; }
@@ -1100,10 +1212,24 @@
     <span>Alpha</span><span>Tracker</span>
   </div>
   <div class="header-right">
+    <button class="alert-bell" onclick="toggleAlertPanel()" title="Alerts">
+      🔔 <span id="alertCount" class="alert-badge" style="display:none">0</span>
+    </button>
     <span class="last-refresh" id="lastRefresh">Updated: —</span>
     <button class="btn-refresh" id="btnRefresh" onclick="refreshAll()">⟳ Refresh</button>
   </div>
 </header>
+
+<!-- ALERT PANEL -->
+<div class="alert-panel" id="alertPanel">
+  <div class="alert-panel-header">
+    <span>🔔 Recent Alerts</span>
+    <button class="alert-close" onclick="toggleAlertPanel()">✕</button>
+  </div>
+  <div id="alertList" class="alert-list">
+    <div class="empty-text">No alerts yet</div>
+  </div>
+</div>
 
 <!-- MAIN -->
 <div class="main">
@@ -1412,10 +1538,14 @@ async function loadTokens() {
         buy_sell_ratio: m.buy_sell_ratio,
         vol_mc_ratio: m.vol_mc_ratio,
         float_pct: m.float_pct,
+        buy_price: t.buy_price || 0,
+        buy_amount: t.buy_amount || 0,
+        buy_date: t.buy_date || '',
       };
     });
     renderCards();
     updateRefreshTime();
+    loadSparklines();
   } catch(e) {
     document.getElementById('tokenGrid').innerHTML =
       `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Failed to load: ${e.message}</div></div>`;
@@ -1550,7 +1680,12 @@ function renderCards() {
           <div class="token-name-wrap">
             <div class="token-name">${t.symbol}</div>
             <div class="token-chain">⛓ ${(t.chain || '?').toUpperCase()} · ${t.age}</div>
+            <div class="external-links">
+              <a href="https://dexscreener.com/${t.chain}/${t.contract}" target="_blank" class="link-icon" title="DexScreener">🔎</a>
+              <a href="${t.chain === 'bsc' ? 'https://bscscan.com/token/' : (t.chain === 'base' ? 'https://basescan.org/token/' : 'https://etherscan.io/token/') + t.contract}" target="_blank" class="link-icon" title="Explorer">🔗</a>
+            </div>
           </div>
+
         </div>
         <div class="token-right">
           <div class="price-main">$${fmtPrice(t.price)}</div>
@@ -1559,6 +1694,9 @@ function renderCards() {
           </div>
           <div class="score-badge ${scoreColor(t.score)}" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;font-size:13px;font-weight:700;font-family:var(--mono);margin-top:6px;">
             ${t.score}
+          </div>
+          <div class="sparkline-wrap">
+            <canvas class="sparkline-canvas" id="spark-${t.id}" width="200" height="56"></canvas>
           </div>
         </div>
       </div>
@@ -1651,6 +1789,28 @@ function renderCards() {
           <span class="contract-label">Contract</span>
           <span class="contract-addr">${t.contract}</span>
           <button class="copy-btn" onclick="event.stopPropagation();copyContract('${t.contract}')">📋</button>
+        </div>
+
+        <!-- Portfolio -->
+        <div class="portfolio-section" style="margin-top:10px;padding:10px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+          <div class="exp-item-label" style="margin-bottom:6px">💰 Portfolio</div>
+          ${t.buy_price > 0 ? `
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+              <div><span class="supply-item-label">Beli</span> <span class="supply-item-val">$${t.buy_price.toFixed(8)}</span></div>
+              <div><span class="supply-item-label">Jumlah</span> <span class="supply-item-val">${fmtNum(t.buy_amount)}</span></div>
+              <div><span class="supply-item-label">Tanggal</span> <span class="supply-item-val">${t.buy_date || '—'}</span></div>
+              <div><span class="supply-item-label">Cost</span> <span class="supply-item-val">$${fmt(t.buy_price * t.buy_amount)}</span></div>
+              <div><span class="supply-item-label">P&L</span> <span class="supply-item-val ${(t.price - t.buy_price) >= 0 ? 'green' : 'red'}">$${fmt((t.price - t.buy_price) * t.buy_amount)} (${((t.price - t.buy_price) / t.buy_price * 100).toFixed(1)}%)</span></div>
+            </div>
+            <button class="expand-btn" style="color:var(--red)" onclick="event.stopPropagation();clearPortfolioEntry('${t.contract}')">Hapus Portfolio</button>
+          ` : `
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+              <div><label class="supply-item-label">Harga Beli</label><br><input type="number" step="any" id="pf-price-${t.id}" placeholder="0.00" style="width:100px;padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px"></div>
+              <div><label class="supply-item-label">Jumlah Token</label><br><input type="number" step="any" id="pf-amount-${t.id}" placeholder="0" style="width:100px;padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px"></div>
+              <div><label class="supply-item-label">Tanggal</label><br><input type="date" id="pf-date-${t.id}" style="width:130px;padding:4px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px"></div>
+              <button class="expand-btn" style="color:var(--green);border-color:var(--green)" onclick="event.stopPropagation();savePortfolio('${t.contract}', ${t.id})">Simpan</button>
+            </div>
+          `}
         </div>
       </div>
 
@@ -1934,6 +2094,43 @@ function copyContract(addr) {
   );
 }
 
+async function savePortfolio(contract, id) {
+  const price = parseFloat(document.getElementById('pf-price-' + id)?.value || 0);
+  const amount = parseFloat(document.getElementById('pf-amount-' + id)?.value || 0);
+  const date = document.getElementById('pf-date-' + id)?.value || '';
+  if (price <= 0 || amount <= 0) {
+    showToast('⚠️ Harga dan jumlah harus > 0', 'error');
+    return;
+  }
+  try {
+    const r = await fetch('/api/portfolio/' + encodeURIComponent(contract), {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({buy_price: price, buy_amount: amount, buy_date: date}),
+    });
+    if (r.ok) {
+      showToast('💰 Portfolio disimpan', 'success');
+      loadTokens();
+    } else {
+      showToast('⚠️ Gagal simpan portfolio', 'error');
+    }
+  } catch(e) {
+    showToast('⚠️ Error: ' + e.message, 'error');
+  }
+}
+
+async function clearPortfolioEntry(contract) {
+  try {
+    const r = await fetch('/api/portfolio/' + encodeURIComponent(contract), {method: 'DELETE'});
+    if (r.ok) {
+      showToast('🗑️ Portfolio dihapus', 'success');
+      loadTokens();
+    }
+  } catch(e) {
+    showToast('⚠️ Error: ' + e.message, 'error');
+  }
+}
+
 function showToast(msg, type) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1942,9 +2139,98 @@ function showToast(msg, type) {
   t._timer = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
+function drawSparkline(canvasId, prices, isUp) {
+  const c = document.getElementById(canvasId);
+  if (!c || !prices || prices.length < 2) return;
+  const ctx = c.getContext('2d');
+  const w = c.width, h = c.height;
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+  const color = isUp ? '#00d26a' : '#ff3b5c';
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+
+  for (let i = 0; i < prices.length; i++) {
+    const x = (i / (prices.length - 1)) * w;
+    const y = h - ((prices[i] - min) / range) * (h - 8) - 4;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, isUp ? 'rgba(0,210,106,0.15)' : 'rgba(255,59,92,0.15)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.lineTo(w, h);
+  ctx.lineTo(0, h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+}
+
+function loadSparklines() {
+  tokens.forEach(t => {
+    fetch('/api/sparkline/' + encodeURIComponent(t.contract) + '?limit=20')
+      .then(r => r.json())
+      .then(data => {
+        if (data.prices && data.prices.length >= 2) {
+          const isUp = data.prices[data.prices.length - 1] >= data.prices[0];
+          drawSparkline('spark-' + t.id, data.prices, isUp);
+        }
+      })
+      .catch(() => {});
+  });
+}
+
+function toggleAlertPanel() {
+  document.getElementById('alertPanel').classList.toggle('open');
+  if (document.getElementById('alertPanel').classList.contains('open')) {
+    loadAlerts();
+  }
+}
+
+async function loadAlerts() {
+  try {
+    const r = await fetch('/api/alerts');
+    const data = await r.json();
+    const alerts = data.alerts || [];
+    const listEl = document.getElementById('alertList');
+    const badge = document.getElementById('alertCount');
+
+    if (alerts.length === 0) {
+      listEl.innerHTML = '<div class="empty-text">No alerts yet</div>';
+      badge.style.display = 'none';
+      return;
+    }
+
+    badge.textContent = alerts.length;
+    badge.style.display = 'flex';
+    listEl.innerHTML = alerts.map(a => {
+      const typeClass = a.type || 'info';
+      const emoji = typeClass === 'pump' ? '🔥' : typeClass === 'dump' ? '💀' : typeClass === 'score_drop' ? '⚠️' : typeClass === 'new_token' ? '🆕' : '📢';
+      const time = new Date(a.timestamp * 1000).toLocaleTimeString();
+      // Clean markdown from message
+      const msg = a.message.replace(/\*+/g, '').replace(/\n/g, '<br>');
+      return `<div class="alert-item ${typeClass}">
+        <span class="alert-time">${emoji} ${time}</span><br>
+        ${msg}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('Failed to load alerts:', e);
+  }
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadTokens();
 updateRefreshTime();
+loadAlerts();
 </script>
 </body>
 </html>
