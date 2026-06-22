@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Body
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -302,6 +302,62 @@ async def correct_token(contract: str, corrections: dict):
     existing.update(corrections)
     db.set_notes(contract, existing)
     return {"status": "updated", "corrections": existing}
+
+
+@app.patch("/api/portfolio/{contract}")
+async def set_portfolio(contract: str, body: dict = Body(...)):
+    """Set portfolio entry: buy_price, buy_amount, buy_date."""
+    token = db.get_token(contract)
+    if not token:
+        raise HTTPException(404, "Token not found")
+    buy_price = float(body.get("buy_price", 0))
+    buy_amount = float(body.get("buy_amount", 0))
+    buy_date = body.get("buy_date", "")
+    if buy_price <= 0 or buy_amount <= 0:
+        raise HTTPException(400, "buy_price and buy_amount must be > 0")
+    db.set_portfolio(contract, buy_price, buy_amount, buy_date)
+    return {"status": "saved", "buy_price": buy_price, "buy_amount": buy_amount, "buy_date": buy_date}
+
+
+@app.delete("/api/portfolio/{contract}")
+async def clear_portfolio(contract: str):
+    """Remove portfolio entry for a token."""
+    token = db.get_token(contract)
+    if not token:
+        raise HTTPException(404, "Token not found")
+    db.clear_portfolio(contract)
+    return {"status": "cleared"}
+
+
+@app.get("/api/portfolio")
+async def get_portfolio():
+    """Get portfolio summary with P&L."""
+    return db.get_portfolio_summary()
+
+
+@app.get("/api/sparkline/{contract}")
+async def get_sparkline(contract: str, limit: int = Query(20, le=100)):
+    """Get price history for sparkline chart."""
+    rows = db.get_history(contract, limit=limit)
+    points = []
+    for h in reversed(rows):
+        a = h.get("analysis", {})
+        if isinstance(a, str):
+            try:
+                a = json.loads(a)
+            except:
+                continue
+        price = a.get("metrics", {}).get("price_usd", 0)
+        if price:
+            points.append(price)
+    return {"contract": contract, "prices": points}
+
+
+@app.get("/api/alerts")
+async def get_alerts():
+    """Get recent alert history."""
+    from app.services.notifier import get_alert_history
+    return {"alerts": get_alert_history()}
 
 
 if __name__ == "__main__":

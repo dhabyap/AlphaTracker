@@ -208,10 +208,9 @@ class Database:
         )
 
     def _migrate_ai_columns(self):
-        """Add ai_recommendation columns to tokens table if missing."""
+        """Add ai_recommendation and portfolio columns to tokens table if missing."""
         try:
             if IS_MYSQL:
-                # Check if column exists
                 rows = self._fetch(
                     "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
                     "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'tokens' AND COLUMN_NAME = 'ai_recommendation'",
@@ -220,8 +219,16 @@ class Database:
                 if not rows:
                     self._exec("ALTER TABLE tokens ADD COLUMN ai_recommendation JSON")
                     self._exec("ALTER TABLE tokens ADD COLUMN ai_recommendation_at INT DEFAULT 0")
+                rows2 = self._fetch(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
+                    "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'tokens' AND COLUMN_NAME = 'buy_price'",
+                    (cfg["database"],),
+                )
+                if not rows2:
+                    self._exec("ALTER TABLE tokens ADD COLUMN buy_price DOUBLE DEFAULT 0")
+                    self._exec("ALTER TABLE tokens ADD COLUMN buy_amount DOUBLE DEFAULT 0")
+                    self._exec("ALTER TABLE tokens ADD COLUMN buy_date VARCHAR(20) DEFAULT ''")
             else:
-                # SQLite: use PRAGMA to check columns
                 conn = get_conn()
                 try:
                     cur = conn.cursor()
@@ -230,6 +237,10 @@ class Database:
                     if "ai_recommendation" not in cols:
                         self._exec("ALTER TABLE tokens ADD COLUMN ai_recommendation TEXT DEFAULT ''")
                         self._exec("ALTER TABLE tokens ADD COLUMN ai_recommendation_at INTEGER DEFAULT 0")
+                    if "buy_price" not in cols:
+                        self._exec("ALTER TABLE tokens ADD COLUMN buy_price REAL DEFAULT 0")
+                        self._exec("ALTER TABLE tokens ADD COLUMN buy_amount REAL DEFAULT 0")
+                        self._exec("ALTER TABLE tokens ADD COLUMN buy_date TEXT DEFAULT ''")
                 finally:
                     conn.close()
         except Exception as e:
@@ -262,3 +273,64 @@ class Database:
             "UPDATE tokens SET ai_recommendation = ?, ai_recommendation_at = ? WHERE contract = ?",
             (ai_json, int(time.time()), contract),
         )
+
+    def set_portfolio(self, contract: str, buy_price: float, buy_amount: float, buy_date: str = ""):
+        """Set portfolio entry (buy price, amount, date) for a token."""
+        if not buy_date:
+            buy_date = time.strftime("%Y-%m-%d")
+        self._exec(
+            "UPDATE tokens SET buy_price = ?, buy_amount = ?, buy_date = ? WHERE contract = ?",
+            (buy_price, buy_amount, buy_date, contract),
+        )
+
+    def clear_portfolio(self, contract: str):
+        """Remove portfolio entry for a token."""
+        self._exec(
+            "UPDATE tokens SET buy_price = 0, buy_amount = 0, buy_date = '' WHERE contract = ?",
+            (contract,),
+        )
+
+    def get_portfolio_summary(self) -> dict:
+        """Get portfolio summary with P&L for all tokens with buy entries."""
+        tokens = self.get_all_tokens(limit=200)
+        entries = []
+        total_cost = 0
+        total_value = 0
+        for t in tokens:
+            bp = t.get("buy_price", 0) or 0
+            ba = t.get("buy_amount", 0) or 0
+            if bp <= 0 or ba <= 0:
+                continue
+            analysis = t.get("latest_analysis") or {}
+            if isinstance(analysis, str):
+                try:
+                    analysis = json.loads(analysis)
+                except:
+                    analysis = {}
+            current_price = analysis.get("metrics", {}).get("price_usd", 0) or 0
+            cost = bp * ba
+            value = current_price * ba
+            pnl = value - cost
+            pnl_pct = ((current_price - bp) / bp * 100) if bp > 0 else 0
+            total_cost += cost
+            total_value += value
+            entries.append({
+                "contract": t["contract"],
+                "symbol": t["symbol"],
+                "buy_price": bp,
+                "buy_amount": ba,
+                "buy_date": t.get("buy_date", ""),
+                "current_price": current_price,
+                "cost": cost,
+                "value": value,
+                "pnl": pnl,
+                "pnl_pct": pnl_pct,
+            })
+        entries.sort(key=lambda x: -abs(x["pnl"]))
+        return {
+            "entries": entries,
+            "total_cost": total_cost,
+            "total_value": total_value,
+            "total_pnl": total_value - total_cost,
+            "total_pnl_pct": ((total_value - total_cost) / total_cost * 100) if total_cost > 0 else 0,
+        }

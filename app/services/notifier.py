@@ -2,11 +2,31 @@
 
 import os
 import json
+import time
 import requests
 
 TOKEN = os.environ.get("ALPHA_BOT_TOKEN", "")
 CHAT_ID = os.environ.get("ALPHA_CHAT_ID", "1042928926")
 API_URL = f"https://api.telegram.org/bot{TOKEN}" if TOKEN else None
+
+# In-memory alert history (last 20 alerts)
+_alert_history = []
+MAX_ALERTS = 20
+
+def add_alert_to_history(message: str, alert_type: str = "info"):
+    """Add alert to in-memory history."""
+    _alert_history.append({
+        "message": message,
+        "type": alert_type,
+        "timestamp": int(time.time()),
+    })
+    # Keep only last MAX_ALERTS
+    if len(_alert_history) > MAX_ALERTS:
+        _alert_history.pop(0)
+
+def get_alert_history() -> list:
+    """Get recent alerts."""
+    return list(reversed(_alert_history))
 
 def send_telegram(message: str) -> bool:
     """Send message to Telegram. Returns True if sent."""
@@ -58,7 +78,9 @@ def check_alerts(before: list, after: list, threshold_score_drop: int = 10, thre
             sym = t.get("symbol", "?")
             score = t.get("score", 0)
             price = t.get("price", 0)
-            alerts.append(f"🆕 *New Token Tracked: ${sym}*\nScore: {score}/100 | Price: ${price:.4f}")
+            msg = f"🆕 *New Token Tracked: ${sym}*\nScore: {score}/100 | Price: ${price:.4f}"
+            alerts.append(msg)
+            add_alert_to_history(msg, "new_token")
 
     # Existing tokens changed
     for contract, t in after_map.items():
@@ -72,14 +94,20 @@ def check_alerts(before: list, after: list, threshold_score_drop: int = 10, thre
 
         # Score drop
         if old_score - new_score >= threshold_score_drop:
-            alerts.append(format_token_change(t, old_score, new_score, old_price, new_price) + "\n⚠️ Significant score drop!")
+            msg = format_token_change(t, old_score, new_score, old_price, new_price) + "\n⚠️ Significant score drop!"
+            alerts.append(msg)
+            add_alert_to_history(msg, "score_drop")
 
         # Price pump
         if old_price and new_price:
             pct = ((new_price - old_price) / old_price) * 100
             if pct >= threshold_pump:
-                alerts.append(format_token_change(t, old_score, new_score, old_price, new_price) + f"\n🔥 Pump {pct:.0f}%!")
+                msg = format_token_change(t, old_score, new_score, old_price, new_price) + f"\n🔥 Pump {pct:.0f}%!"
+                alerts.append(msg)
+                add_alert_to_history(msg, "pump")
             elif pct <= -threshold_pump:
-                alerts.append(format_token_change(t, old_score, new_score, old_price, new_price) + f"\n💀 Dump {abs(pct):.0f}%!")
+                msg = format_token_change(t, old_score, new_score, old_price, new_price) + f"\n💀 Dump {abs(pct):.0f}%!"
+                alerts.append(msg)
+                add_alert_to_history(msg, "dump")
 
     return alerts
