@@ -97,6 +97,13 @@ async def get_signals(limit: int = Query(20, le=100)):
     return {"signals": sorted(result, key=lambda x: -x["score"])}
 
 
+@app.get("/api/history/{contract}")
+async def get_history(contract: str, limit: int = Query(20, le=100)):
+    """Get analysis history for a token (for chart)."""
+    rows = db.get_history(contract, limit=limit)
+    return {"history": rows}
+
+
 @app.get("/api/scan")
 async def scan_token(contract: str = Query(...), chain: str = Query("bsc")):
     """Scan a single token — get full analysis."""
