@@ -126,6 +126,8 @@ class Database:
             self._exec("CREATE INDEX IF NOT EXISTS idx_tokens_score ON tokens(latest_score DESC)")
             self._exec("CREATE INDEX IF NOT EXISTS idx_tokens_contract ON tokens(contract)")
             self._exec("CREATE INDEX IF NOT EXISTS idx_history_contract ON analysis_history(contract)")
+        # Migrate AI columns
+        self._migrate_ai_columns()
 
     def _seed(self):
         seeds = [
@@ -203,4 +205,60 @@ class Database:
         self._exec(
             "UPDATE tokens SET notes = ? WHERE contract = ?",
             (json.dumps(notes), contract),
+        )
+
+    def _migrate_ai_columns(self):
+        """Add ai_recommendation columns to tokens table if missing."""
+        try:
+            if IS_MYSQL:
+                # Check if column exists
+                rows = self._fetch(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
+                    "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'tokens' AND COLUMN_NAME = 'ai_recommendation'",
+                    (cfg["database"],),
+                )
+                if not rows:
+                    self._exec("ALTER TABLE tokens ADD COLUMN ai_recommendation JSON")
+                    self._exec("ALTER TABLE tokens ADD COLUMN ai_recommendation_at INT DEFAULT 0")
+            else:
+                # SQLite: use PRAGMA to check columns
+                conn = get_conn()
+                try:
+                    cur = conn.cursor()
+                    cur.execute("PRAGMA table_info(tokens)")
+                    cols = [row["name"] for row in cur.fetchall()]
+                    if "ai_recommendation" not in cols:
+                        self._exec("ALTER TABLE tokens ADD COLUMN ai_recommendation TEXT DEFAULT ''")
+                        self._exec("ALTER TABLE tokens ADD COLUMN ai_recommendation_at INTEGER DEFAULT 0")
+                finally:
+                    conn.close()
+        except Exception as e:
+            print(f"[DB] AI migration skipped: {e}")
+
+    def get_ai_recommendation(self, contract: str, max_age_seconds: int = 3600) -> dict | None:
+        """Get cached AI recommendation if fresh (within max_age_seconds)."""
+        rows = self._fetch(
+            "SELECT ai_recommendation, ai_recommendation_at FROM tokens WHERE contract = ?",
+            (contract,),
+        )
+        if not rows or not rows[0].get("ai_recommendation"):
+            return None
+        row = rows[0]
+        cached_at = row.get("ai_recommendation_at", 0)
+        if time.time() - cached_at > max_age_seconds:
+            return None  # Expired
+        try:
+            data = json.loads(row["ai_recommendation"]) if isinstance(row["ai_recommendation"], str) else row["ai_recommendation"]
+            data["_cached"] = True
+            data["_cached_at"] = cached_at
+            return data
+        except (json.JSONDecodeError, TypeError):
+            return None
+
+    def save_ai_recommendation(self, contract: str, ai_data: dict):
+        """Save AI recommendation to DB cache."""
+        ai_json = json.dumps(ai_data, ensure_ascii=False)
+        self._exec(
+            "UPDATE tokens SET ai_recommendation = ?, ai_recommendation_at = ? WHERE contract = ?",
+            (ai_json, int(time.time()), contract),
         )

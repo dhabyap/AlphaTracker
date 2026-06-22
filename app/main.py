@@ -130,31 +130,44 @@ async def batch_scan(contracts: str = Query(...)):
 
 
 @app.get("/api/ai-advisor")
-async def ai_advisor(contract: str = Query(...)):
-    """AI-powered analysis & recommendation for a token."""
+async def ai_advisor(contract: str = Query(...), force: int = Query(0, description="1=force refresh AI")):
+    """AI-powered analysis & recommendation for a token. Cached in DB for 1 hour."""
     pairs = dex.search(contract)
     if not pairs:
         raise HTTPException(404, "Token not found")
 
     analysis = analyzer.analyze(pairs)
+
+    # Check DB cache first (unless force refresh)
+    if not force:
+        cached = db.get_ai_recommendation(contract, max_age_seconds=3600)
+        if cached:
+            return {
+                "contract": contract,
+                "analysis": analysis,
+                "ai": cached,
+                "_from_cache": True,
+            }
+
+    # No cache or expired — hit AI
     m = analysis["metrics"]
     signals_str = "; ".join(f"{s['label']} ({s.get('detail','')})" for s in analysis.get("signals", []))
-    
+
     context = (
         f"Token: ${m.get('symbol','?')}\n"
-        f"Price: ${m.get('price_usd','?')}\n"
-        f"24h Change: {m.get('price_change_24h','?')}%\n"
-        f"Liquidity: ${m.get('liquidity_usd',0):,.0f}\n"
-        f"24h Volume: ${m.get('volume_24h',0):,.0f}\n"
+        f"Harga: ${m.get('price_usd','?')}\n"
+        f"Perubahan 24h: {m.get('price_change_24h','?')}%\n"
+        f"Likuiditas: ${m.get('liquidity_usd',0):,.0f}\n"
+        f"Volume 24h: ${m.get('volume_24h',0):,.0f}\n"
         f"Market Cap: ${m.get('market_cap',0):,.0f}\n"
-        f"Buy/Sell Ratio: {m.get('buy_sell_ratio','?')}x\n"
-        f"Age: {m.get('age_days','?')} days\n"
+        f"Rasio Beli/Jual: {m.get('buy_sell_ratio','?')}x\n"
+        f"Umur: {m.get('age_days','?')} hari\n"
         f"Supply Float: {m.get('float_pct','?')}%\n"
         f"Trading Pairs: {m.get('markets',0)}\n"
         f"Chain: {pairs[0].get('chainId','?')}\n"
-        f"Signals: {signals_str}\n"
-        f"Score: {analysis['score']}/100\n"
-        f"Contract: {contract[:10]}...{contract[-6:]}"
+        f"Sinyal: {signals_str}\n"
+        f"Skor: {analysis['score']}/100\n"
+        f"Kontrak: {contract[:10]}...{contract[-6:]}"
     )
 
     # Inject manual corrections if any
@@ -163,12 +176,35 @@ async def ai_advisor(contract: str = Query(...)):
         try:
             notes = json.loads(token["notes"]) if isinstance(token["notes"], str) else token["notes"]
             if notes:
-                corrections = "\n".join(f"CORRECTIONS: {k}={v}" for k, v in notes.items())
-                context += f"\n\nIMPORTANT CORRECTIONS (override DexScreener data with these):\n{corrections}"
+                corrections = "\n".join(f"KOREKSI: {k}={v}" for k, v in notes.items())
+                context += f"\n\nKOREKSI DATA (override data DexScreener dengan ini):\n{corrections}"
         except:
             pass
 
-    recommendation = ai.analyze(context)
+    try:
+        recommendation = ai.analyze(context)
+        # Save to DB cache
+        db.save_ai_recommendation(contract, recommendation)
+    except Exception as e:
+        # Return cached even if expired, or fallback
+        cached = db.get_ai_recommendation(contract, max_age_seconds=999999)
+        if cached:
+            return {
+                "contract": contract,
+                "analysis": analysis,
+                "ai": cached,
+                "_from_cache": True,
+                "_warning": f"AI error: {e}. Using old cache.",
+            }
+        recommendation = {
+            "verdict": "error",
+            "confidence": 0,
+            "risk_level": "unknown",
+            "reasoning": f"Gagal menghubungi AI: {e}",
+            "key_factors": [],
+            "hold_until": "",
+        }
+
     return {
         "contract": contract,
         "analysis": analysis,

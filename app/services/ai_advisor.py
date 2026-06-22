@@ -15,21 +15,21 @@ class AIAdvisor:
 
     def analyze(self, context: str) -> dict:
         """Get AI recommendation for a token based on market data."""
-        prompt = f"""You are a professional crypto analyst. Analyze this token and give a recommendation:
+        prompt = f"""Anda adalah analis token kripto profesional. Analisis token ini dan berikan rekomendasi:
 
 {context}
 
-Respond in JSON format only:
+Balas HANYA dalam format JSON (tanpa markdown):
 {{
   "verdict": "strong_buy | buy | hold | avoid | strong_sell",
   "confidence": 0-100,
-  "reasoning": "2-3 sentence analysis in English, concise and natural",
-  "key_factors": ["factor1", "factor2"],
+  "reasoning": "Penjelasan 2-3 kalimat dalam Bahasa Indonesia, ringkas dan alami",
+  "key_factors": ["faktor1", "faktor2"],
   "risk_level": "low | medium | high",
-  "hold_until": "condition for selling (e.g. drop 20% from current price, or gain 50%)"
+  "hold_until": "Kondisi kapan harus jual (contoh: turun 20% dari harga sekarang, atau naik 50%)"
 }}
 
-JSON only, no markdown."""
+Hanya JSON, tanpa teks lain."""
         try:
             r = requests.post(
                 self.url,
@@ -43,7 +43,7 @@ JSON only, no markdown."""
                 timeout=30,
             )
             if r.status_code != 200:
-                return {"verdict": "unknown", "confidence": 0, "reasoning": f"API error: {r.status_code}"}
+                raise Exception(f"AI API error: {r.status_code} — {r.text[:200]}")
 
             raw = r.text.strip()
             # Strip streaming artifacts (gateway adds data: [DONE])
@@ -69,6 +69,6 @@ JSON only, no markdown."""
             return json.loads(content)
 
         except json.JSONDecodeError as e:
-            return {"verdict": "hold", "confidence": 50, "reasoning": "Data available, AI parsing error.", "risk_level": "medium", "hold_until": "Price below support"}
+            return {"verdict": "hold", "confidence": 50, "reasoning": "Data tersedia, tapi AI gagal memproses. Coba refresh.", "risk_level": "medium", "hold_until": "Harga turun di bawah support"}
         except Exception as e:
-            return {"verdict": "unknown", "confidence": 0, "reasoning": f"Error: {str(e)}"}
+            raise  # Let caller handle with cache fallback

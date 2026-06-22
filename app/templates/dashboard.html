@@ -1661,7 +1661,6 @@ function renderCards() {
 }
 
 function toggleExpand(id, btn, e) {
-  console.log('toggleExpand', id, btn, e);
   if (e) e.stopPropagation();
   const el = document.getElementById('expand-' + id);
   if (!el) { console.log('not found', 'expand-' + id); return; }
@@ -1745,10 +1744,11 @@ function signalIcon(type) {
   return map[type] || '📌';
 }
 
-async function fetchAIAnalysis(contract, symbol) {
+async function fetchAIAnalysis(contract, symbol, force) {
   const aiContent = document.getElementById('aiContent');
+  const forceParam = force ? '&force=1' : '';
   try {
-    const r = await fetch(`/api/ai-advisor?contract=${encodeURIComponent(contract)}`);
+    const r = await fetch(`/api/ai-advisor?contract=${encodeURIComponent(contract)}${forceParam}`);
     if (!r.ok) throw new Error('API returned ' + r.status);
     const data = await r.json();
 
@@ -1761,8 +1761,8 @@ async function fetchAIAnalysis(contract, symbol) {
     aiContent.innerHTML = `
       <div class="empty">
         <div class="empty-icon">⚠️</div>
-        <div class="empty-text">Failed to get AI analysis: ${e.message}</div>
-        <button class="ai-refresh-btn" onclick="fetchAIAnalysis('${contract}','${symbol||''}')" style="margin-top:16px">⟳ Retry</button>
+        <div class="empty-text">Gagal mengambil analisis AI: ${e.message}</div>
+        <button class="ai-refresh-btn" onclick="fetchAIAnalysis('${contract}','${symbol||''}', true)" style="margin-top:16px">⟳ Coba Lagi</button>
       </div>`;
   }
 }
@@ -1893,7 +1893,7 @@ function renderAIContent(data, symbolHint) {
     </div>
 
     <!-- Refresh button -->
-    <button class="ai-refresh-btn" onclick="fetchAIAnalysis('${data.contract || ''}','${sym}')">⟳ Refresh Analysis</button>
+    <button class="ai-refresh-btn" onclick="fetchAIAnalysis('${data.contract || ''}','${sym}', true)">⟳ Refresh AI</button>
   `;
 }
 
