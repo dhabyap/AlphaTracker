@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Binance Alpha Tracker</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#13131a;--card2:#1a1a24;--accent:#f7931a;--accent2:#ff9f2f;--text:#e8e8ed;--text2:#8888a0;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--border:#222233;--radius:12px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:16px}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--card);border-radius:var(--radius);margin-bottom:16px}
+header h1{font-size:20px;font-weight:700}
+header h1 span{color:var(--accent)}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card);padding:16px;border-radius:var(--radius);text-align:center}
+.stat-card .val{font-size:24px;font-weight:700;margin-top:4px}
+.stat-card .lbl{font-size:12px;color:var(--text2)}
+.search-bar{display:flex;gap:8px;margin-bottom:16px}
+.search-bar input{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:var(--radius);font-size:14px}
+.search-bar input:focus{outline:none;border-color:var(--accent)}
+.search-bar button{background:var(--accent);color:#000;border:none;padding:12px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;white-space:nowrap}
+.token-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.token-card{background:var(--card);border-radius:var(--radius);padding:16px;cursor:pointer;transition:border .2s;border:1px solid transparent}
+.token-card:hover{border-color:var(--accent)}
+.token-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.token-card .symbol{font-size:18px;font-weight:700}
+.token-card .price{font-size:18px;font-weight:600}
+.token-card .price.up{color:var(--green)}
+.token-card .price.down{color:var(--red)}
+.token-card .meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.token-card .meta span{font-size:12px;padding:3px 8px;border-radius:6px;background:var(--card2)}
+.token-card .signals{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.signal{font-size:11px;padding:2px 6px;border-radius:4px;white-space:nowrap}
+.signal.bullish{background:#14532d;color:var(--green)}
+.signal.bearish{background:#7f1d1d;color:var(--red)}
+.signal.warning{background:#713f12;color:var(--yellow)}
+.signal.safe{background:#1e3a5f;color:#60a5fa}
+.signal.hot{background:#581c87;color:#c084fc}
+.signal.info{background:#1e293b;color:var(--text2)}
+.score-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.score-high{background:var(--green);color:#000}
+.score-mid{background:var(--yellow);color:#000}
+.score-low{background:var(--red);color:#fff}
+.rec-badge{font-size:11px;padding:4px 8px;border-radius:6px;font-weight:600}
+.rec-strong_buy{background:#14532d;color:var(--green)}
+.rec-buy{background:#1e3a5f;color:#60a5fa}
+.rec-hold{background:#713f12;color:var(--yellow)}
+.rec-avoid{background:#7f1d1d;color:var(--red)}
+.sort-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.sort-btn{background:var(--card2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s}
+.sort-btn.active,.sort-btn:hover{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--card);border-radius:var(--radius);padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
+.modal h2{font-size:20px;margin-bottom:16px}
+.modal .close{float:right;background:none;border:none;color:var(--text2);font-size:24px;cursor:pointer}
+.modal .field{margin:8px 0;display:flex;justify-content:space-between}
+.modal .field .lbl{color:var(--text2)}
+.modal .field .val{font-weight:600}
+.loading{text-align:center;padding:40px;color:var(--text2)}
+.empty{text-align:center;padding:40px;color:var(--text2)}
+.sig-section{margin-top:16px}
+.sig-section h3{margin-bottom:8px;font-size:14px;color:var(--text2)}
+@media(max-width:600px){
+  .token-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  header h1{font-size:16px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="container">
+    <header>
+      <h1>🔍 <span>Alpha</span>Tracker</h1>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:13px;color:var(--text2)">{{ tokens.length }} tokens</span>
+        <button @click="refreshAll" style="background:var(--card2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px">⟳ Refresh</button>
+      </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="lbl">Tracked</div>
+        <div class="val" style="color:var(--accent)">{{ stats.tracked }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Strong Buy</div>
+        <div class="val" style="color:var(--green)">{{ stats.strongBuy }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Monitor</div>
+        <div class="val" style="color:var(--yellow)">{{ stats.monitor }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">Avoid</div>
+        <div class="val" style="color:var(--red)">{{ stats.avoid }}</div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-bar">
+      <input v-model="searchInput" placeholder="Contract address or symbol..." @keyup.enter="trackToken" />
+      <button @click="trackToken" :disabled="loading">+ Track</button>
+    </div>
+
+    <!-- Sort -->
+    <div class="sort-bar">
+      <button v-for="s in sortOptions" :key="s.key" class="sort-btn" :class="{active: sortBy === s.key}" @click="sortBy = s.key">{{ s.label }}</button>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="loading">⏳ Scanning...</div>
+
+    <!-- Empty -->
+    <div v-else-if="tokens.length === 0" class="empty">
+      <p style="font-size:40px;margin-bottom:12px">🔍</p>
+      <p>No tokens tracked yet. Add a contract address above.</p>
+    </div>
+
+    <!-- Token Grid -->
+    <div v-else class="token-grid">
+      <div v-for="t in sortedTokens" :key="t.contract" class="token-card" @click="showDetail(t)">
+        <div class="top">
+          <span class="symbol">{{ t.symbol }}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="price" :class="priceClass(t)">{{ formatPrice(t.price) }}</span>
+            <div class="score-circle" :class="scoreClass(t.score)">{{ t.score }}</div>
+          </div>
+        </div>
+        <div class="signals">
+          <span v-for="s in (t.signals||[])" :key="s.label" class="signal" :class="s.type">{{ s.label }}</span>
+        </div>
+        <div class="meta">
+          <span>💧 ${{ formatNum(t.liquidity) }}</span>
+          <span>📊 ${{ formatNum(t.volume) }}</span>
+          <span v-if="t.mcap">🏦 ${{ formatNum(t.mcap) }}</span>
+          <span v-if="t.age_days">📅 {{ t.age_days }}d</span>
+          <span v-if="t.float_pct !== null">📦 {{ t.float_pct }}% float</span>
+          <span>{{ t.chain }}</span>
+        </div>
+        <div style="margin-top:6px">
+          <span class="rec-badge" :class="'rec-' + t.recommendation">{{ t.rec_label }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div v-if="detail" class="modal-overlay" @click.self="detail=null">
+    <div class="modal">
+      <button class="close" @click="detail=null">&times;</button>
+      <h2>{{ detail.symbol }} <span style="font-size:14px;color:var(--text2)">${{ formatPrice(detail.price) }}</span></h2>
+
+      <div class="sig-section">
+        <h3>Signals</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          <span v-for="s in (detail.signals||[])" :key="s.label" class="signal" :class="s.type">{{ s.label }} — {{ s.detail }}</span>
+        </div>
+      </div>
+
+      <!-- AI Analysis -->
+      <div class="sig-section" v-if="detail.ai">
+        <h3>🤖 AI Analysis</h3>
+        <div style="background:var(--card2);border-radius:8px;padding:12px;margin-top:8px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span><b>Verdict:</b> <span :style="{color: recColor(detail.ai.verdict)}">{{ detail.ai.verdict?.toUpperCase() }}</span></span>
+            <span><b>Confidence:</b> {{ detail.ai.confidence }}/100</span>
+            <span><b>Risk:</b> <span :style="{color: detail.ai.risk_level === 'high' ? 'var(--red)' : detail.ai.risk_level === 'medium' ? 'var(--yellow)' : 'var(--green)'}">{{ detail.ai.risk_level?.toUpperCase() }}</span></span>
+          </div>
+          <p style="font-size:13px;color:var(--text);line-height:1.5">{{ detail.ai.reasoning }}</p>
+          <div v-if="detail.ai.key_factors?.length" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
+            <span v-for="f in detail.ai.key_factors" :key="f" style="font-size:11px;padding:2px 8px;background:var(--card);border-radius:4px;color:var(--accent)">{{ f }}</span>
+          </div>
+          <div v-if="detail.ai.hold_until" style="margin-top:8px;font-size:12px;color:var(--text2)">
+            💡 {{ detail.ai.hold_until }}
+          </div>
+        </div>
+      </div>
+      <div class="sig-section" v-else-if="detail.ai === null">
+        <h3>🤖 AI Analysis</h3>
+        <p style="color:var(--text2);font-size:13px;padding:8px 0">⏳ Loading AI recommendation...</p>
+      </div>
+
+      <div class="sig-section">
+        <h3>Metrics</h3>
+        <div class="field"><span class="lbl">Score</span><span class="val" :style="{color: scoreColor(detail.score)}">{{ detail.score }}/100</span></div>
+        <div class="field"><span class="lbl">Recommendation</span><span class="val" :style="{color: recColor(detail.recommendation)}">{{ detail.rec_label }}</span></div>
+        <div class="field"><span class="lbl">Price</span><span class="val">${{ formatPrice(detail.price) }}</span></div>
+        <div class="field"><span class="lbl">24h Change</span><span class="val" :style="{color: detail.price_change >= 0 ? 'var(--green)' : 'var(--red)'}">{{ detail.price_change != null ? detail.price_change.toFixed(2) + '%' : '?' }}</span></div>
+        <div class="field"><span class="lbl">Liquidity</span><span class="val">${{ formatNum(detail.liquidity) }}</span></div>
+        <div class="field"><span class="lbl">24h Volume</span><span class="val">${{ formatNum(detail.volume) }}</span></div>
+        <div class="field"><span class="lbl">Market Cap</span><span class="val" v-if="detail.mcap">${{ formatNum(detail.mcap) }}</span><span class="val" v-else>?</span></div>
+        <div class="field"><span class="lbl">Buy/Sell Ratio</span><span class="val" v-if="detail.buy_sell != null">{{ detail.buy_sell }}x</span><span class="val" v-else>?</span></div>
+        <div class="field"><span class="lbl">Vol/MC Ratio</span><span class="val" v-if="detail.vol_mc != null">{{ (detail.vol_mc * 100).toFixed(2) }}%</span><span class="val" v-else>?</span></div>
+        <div class="field"><span class="lbl">Float</span><span class="val" v-if="detail.float_pct !== null">{{ detail.float_pct }}%</span><span class="val" v-else>?</span></div>
+        <div class="field"><span class="lbl">Age</span><span class="val" v-if="detail.age_days">{{ detail.age_days }} days</span><span class="val" v-else>?</span></div>
+        <div class="field"><span class="lbl">Markets</span><span class="val">{{ detail.markets || 0 }}</span></div>
+        <div class="field"><span class="lbl">Chain</span><span class="val">{{ detail.chain || '?' }}</span></div>
+        <div class="field" v-if="detail.contract">
+          <span class="lbl">Contract</span>
+          <span class="val" style="font-size:11px;word-break:break-all">{{ detail.contract }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+createApp({
+  setup() {
+    const tokens = ref([]);
+    const loading = ref(false);
+    const searchInput = ref('');
+    const sortBy = ref('score');
+    const detail = ref(null);
+
+    const sortOptions = [
+      {key:'score', label:'🏆 Score'},
+      {key:'newest', label:'🆕 Newest'},
+      {key:'volume', label:'📊 Volume'},
+    ];
+
+    const fetchTokens = async () => {
+      loading.value = true;
+      try {
+        const r = await fetch(`/api/tokens?sort=${sortBy.value}&limit=100`);
+        const data = await r.json();
+        tokens.value = (data.tokens || []).map(t => {
+          const a = t.latest_analysis ? (typeof t.latest_analysis === 'string' ? JSON.parse(t.latest_analysis) : t.latest_analysis) : null;
+          const m = a?.metrics || {};
+          return {
+            contract: t.contract,
+            symbol: t.symbol,
+            chain: t.chain,
+            price: m.price_usd,
+            liquidity: m.liquidity_usd || 0,
+            volume: m.volume_24h || 0,
+            mcap: m.market_cap,
+            price_change: m.price_change_24h,
+            buy_sell: m.buy_sell_ratio,
+            float_pct: m.float_pct,
+            age_days: m.age_days,
+            vol_mc: m.vol_mc_ratio,
+            markets: m.markets,
+            score: a?.score || 0,
+            recommendation: a?.recommendation || 'hold',
+            rec_label: a?.rec_label || '👀 Monitor Only',
+            signals: a?.signals || [],
+            ai: null,
+          };
+        });
+      } catch(e) { console.error(e); }
+      loading.value = false;
+    };
+
+    const trackToken = async () => {
+      const input = searchInput.value.trim();
+      if (!input) return;
+      loading.value = true;
+      try {
+        // Check if it's a contract or symbol
+        if (input.startsWith('0x') && input.length >= 40) {
+          await fetch(`/api/track/${input}`, {method:'POST'});
+        } else {
+          // Search DexScreener for symbol
+          const r = await fetch(`/api/scan?contract=${input}&chain=bsc`);
+          const d = await r.json();
+          if (d.analysis?.metrics?.price_usd) {
+            await fetch(`/api/track/${input}`, {method:'POST'});
+          }
+        }
+        searchInput.value = '';
+        await fetchTokens();
+      } catch(e) { console.error(e); }
+      loading.value = false;
+    };
+
+    const refreshAll = async () => {
+      // Refresh all tokens by re-scanning
+      loading.value = true;
+      for (const t of tokens.value) {
+        try {
+          await fetch(`/api/track/${t.contract}`, {method:'POST'});
+        } catch(e) {}
+      }
+      await fetchTokens();
+    };
+
+    const showDetail = async (t) => { 
+      detail.value = t;
+      if (!t.ai) {
+        try {
+          const r = await fetch(`/api/ai-advisor?contract=${t.contract}`);
+          const d = await r.json();
+          t.ai = d.ai;
+        } catch(e) {}
+      }
+    };
+
+    const priceClass = (t) => (t.price_change >= 0 ? 'up' : 'down');
+    const scoreClass = (s) => s >= 65 ? 'score-high' : s >= 40 ? 'score-mid' : 'score-low';
+    const scoreColor = (s) => s >= 65 ? 'var(--green)' : s >= 40 ? 'var(--yellow)' : 'var(--red)';
+    const recColor = (r) => r === 'strong_buy' ? 'var(--green)' : r === 'buy' ? '#60a5fa' : r === 'hold' ? 'var(--yellow)' : 'var(--red)';
+    const formatPrice = (p) => p != null ? (p < 0.001 ? p.toExponential(4) : p.toFixed(6)) : '?';
+    const formatNum = (n) => n != null ? (n >= 1e9 ? (n/1e9).toFixed(1)+'B' : n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : n.toFixed(0)) : '0';
+
+    const stats = computed(() => {
+      const t = tokens.value;
+      return {
+        tracked: t.length,
+        strongBuy: t.filter(x => x.recommendation === 'strong_buy').length,
+        monitor: t.filter(x => x.recommendation === 'buy' || x.recommendation === 'hold').length,
+        avoid: t.filter(x => x.recommendation === 'avoid').length,
+      };
+    });
+
+    const sortedTokens = computed(() => {
+      const t = [...tokens.value];
+      if (sortBy.value === 'score') t.sort((a,b) => b.score - a.score);
+      else if (sortBy.value === 'newest') t.sort((a,b) => (b.age_days||999) - (a.age_days||999));
+      else if (sortBy.value === 'volume') t.sort((a,b) => (b.volume||0) - (a.volume||0));
+      return t;
+    });
+
+    onMounted(fetchTokens);
+
+    return { tokens, loading, searchInput, sortBy, sortOptions, detail,
+             fetchTokens, trackToken, refreshAll, showDetail,
+             priceClass, scoreClass, scoreColor, recColor, formatPrice, formatNum, stats, sortedTokens };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
