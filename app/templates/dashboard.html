@@ -614,6 +614,330 @@
   .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
   .empty-text { font-size: 15px; }
 
+  /* ── AI MODAL ── */
+  .ai-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .ai-modal-overlay.open { display: flex; }
+
+  .ai-modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: fadeUp 0.2s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .ai-modal-header {
+    padding: 20px 24px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    border-radius: 18px 18px 0 0;
+    z-index: 1;
+  }
+  .ai-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 700;
+  }
+  .ai-modal-title .ai-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--orange), #ff6b35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .ai-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+  .ai-modal-close:hover { color: var(--text); }
+
+  .ai-modal-body { padding: 20px 24px 24px; }
+
+  /* AI Score circle */
+  .ai-score-wrap {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .ai-score-circle {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 700;
+    font-family: var(--mono);
+    flex-shrink: 0;
+    position: relative;
+  }
+  .ai-score-circle.ai-high { background: var(--green-dim); color: var(--green); border: 3px solid var(--green); }
+  .ai-score-circle.ai-mid { background: var(--yellow-dim); color: var(--yellow); border: 3px solid var(--yellow); }
+  .ai-score-circle.ai-low { background: var(--red-dim); color: var(--red); border: 3px solid var(--red); }
+
+  .ai-verdict-wrap { flex: 1; }
+  .ai-verdict-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text3);
+    margin-bottom: 2px;
+  }
+  .ai-verdict-text {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .ai-verdict-text.v-strong_buy { color: var(--green); }
+  .ai-verdict-text.v-buy { color: var(--green); }
+  .ai-verdict-text.v-hold { color: var(--yellow); }
+  .ai-verdict-text.v-avoid { color: var(--red); }
+  .ai-verdict-text.v-strong_sell { color: var(--red); }
+
+  .ai-conf-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ai-conf-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .ai-conf-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  .ai-conf-fill.high { background: var(--green); }
+  .ai-conf-fill.mid { background: var(--yellow); }
+  .ai-conf-fill.low { background: var(--red); }
+  .ai-conf-pct {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text2);
+    min-width: 32px;
+    text-align: right;
+  }
+
+  /* Risk badge */
+  .ai-risk {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 8px;
+  }
+  .ai-risk.risk-low { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,210,106,0.2); }
+  .ai-risk.risk-medium { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,214,10,0.2); }
+  .ai-risk.risk-high { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.2); }
+
+  /* Reasoning */
+  .ai-section { margin-bottom: 18px; }
+  .ai-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text3);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .ai-reasoning {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  /* Key factors chips */
+  .ai-factors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ai-factor {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: var(--orange-dim);
+    color: var(--orange);
+    border: 1px solid rgba(247,147,26,0.2);
+  }
+
+  /* Hold until */
+  .ai-hold {
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+  }
+
+  /* Signals in AI modal */
+  .ai-signals-list { display: flex; flex-direction: column; gap: 6px; }
+  .ai-signal-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .ai-signal-icon { font-size: 14px; flex-shrink: 0; }
+  .ai-signal-label { font-weight: 600; color: var(--text); flex: 1; }
+  .ai-signal-detail { color: var(--text3); font-family: var(--mono); font-size: 11px; }
+
+  .ai-refresh-btn {
+    width: 100%;
+    background: var(--orange);
+    color: #000;
+    border: none;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 11px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .ai-refresh-btn:hover { opacity: 0.88; }
+  .ai-refresh-btn:disabled { opacity: 0.4; cursor: wait; }
+
+  .ai-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 40px 0;
+    color: var(--text3);
+    font-size: 14px;
+  }
+  .ai-spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ai-price-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .ai-price-sym {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .ai-price-val {
+    font-size: 16px;
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--text);
+  }
+  .ai-price-change {
+    font-size: 12px;
+    font-family: var(--mono);
+    font-weight: 500;
+    margin-left: auto;
+  }
+  .ai-price-change.up { color: var(--green); }
+  .ai-price-change.down { color: var(--red); }
+
+  .ai-chain-badge {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+  }
+
+  .ai-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .ai-metric-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .ai-metric-item .label {
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+  .ai-metric-item .val {
+    font-size: 13px;
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--text);
+  }
+
   /* ── MODAL ── */
   .modal-overlay {
     display: none;
@@ -883,6 +1207,26 @@
       </div>
     </div>
     <button class="btn-submit" id="btnTrack" onclick="addToken()">＋ Add Token</button>
+  </div>
+</div>
+
+<!-- AI MODAL -->
+<div class="ai-modal-overlay" id="aiModal" onclick="closeAIModalOutside(event)">
+  <div class="ai-modal">
+    <div class="ai-modal-header">
+      <div class="ai-modal-title">
+        <div class="ai-icon">🤖</div>
+        <span>AI Analysis</span>
+      </div>
+      <button class="ai-modal-close" onclick="closeAIModal()">✕</button>
+    </div>
+    <div class="ai-modal-body" id="aiModalBody">
+      <div class="ai-loading" id="aiLoading">
+        <div class="ai-spinner"></div>
+        <span>Analyzing token data…</span>
+      </div>
+      <div id="aiContent" style="display:none"></div>
+    </div>
   </div>
 </div>
 
@@ -1197,7 +1541,7 @@ function renderCards() {
       : '';
 
     return `
-    <div class="token-card ${cardClass(t.score)}" id="card-${t.id}">
+    <div class="token-card ${cardClass(t.score)}" id="card-${t.id}" onclick="openAIModal('${t.contract}','${t.symbol}')">
 
       <!-- TOP -->
       <div class="card-top">
@@ -1270,8 +1614,8 @@ function renderCards() {
           ${t.action && t.action.includes('Strong Buy') ? '✅' : t.action && t.action.includes('Watch') ? '🚀' : '🚫'} ${t.action || 'Unknown'}
         </span>
         <div style="display:flex;align-items:center;gap:8px">
-          <button class="expand-btn" onclick="toggleExpand('${t.id}', this)">Details ▾</button>
-          <button class="expand-btn" style="color:var(--red)" onclick="removeToken('${t.contract}')">✕</button>
+          <button class="expand-btn" onclick="toggleExpand('${t.id}', this, event)">Details ▾</button>
+          <button class="expand-btn" style="color:var(--red)" onclick="event.stopPropagation();removeToken('${t.contract}')">✕</button>
         </div>
       </div>
 
@@ -1306,7 +1650,7 @@ function renderCards() {
         <div class="contract-row">
           <span class="contract-label">Contract</span>
           <span class="contract-addr">${t.contract}</span>
-          <button class="copy-btn" onclick="copyContract('${t.contract}')">📋</button>
+          <button class="copy-btn" onclick="event.stopPropagation();copyContract('${t.contract}')">📋</button>
         </div>
       </div>
 
@@ -1316,11 +1660,241 @@ function renderCards() {
   updateStats();
 }
 
-function toggleExpand(id, btn) {
+function toggleExpand(id, btn, e) {
+  console.log('toggleExpand', id, btn, e);
+  if (e) e.stopPropagation();
   const el = document.getElementById('expand-' + id);
-  if (!el) return;
+  if (!el) { console.log('not found', 'expand-' + id); return; }
   el.classList.toggle('open');
   btn.textContent = el.classList.contains('open') ? 'Details ▴' : 'Details ▾';
+}
+
+// ── AI MODAL ───────────────────────────────────────────────────────────────────
+function openAIModal(contract, symbol) {
+  const modal = document.getElementById('aiModal');
+  modal.classList.add('open');
+  document.getElementById('aiLoading').style.display = 'flex';
+  document.getElementById('aiContent').style.display = 'none';
+  document.getElementById('aiContent').innerHTML = '';
+  document.body.style.overflow = 'hidden';
+  fetchAIAnalysis(contract, symbol);
+}
+
+function closeAIModal() {
+  document.getElementById('aiModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeAIModalOutside(e) {
+  if (e.target === document.getElementById('aiModal')) closeAIModal();
+}
+
+function getVerdictLabel(v) {
+  const map = {
+    'strong_buy': 'Strong Buy',
+    'buy': 'Buy & Watch',
+    'hold': 'Hold',
+    'avoid': 'Avoid',
+    'strong_sell': 'Strong Sell',
+  };
+  return map[v] || v || 'Unknown';
+}
+
+function getVerdictEmoji(v) {
+  const map = {
+    'strong_buy': '🚀',
+    'buy': '📈',
+    'hold': '⏳',
+    'avoid': '⚠️',
+    'strong_sell': '🔻',
+  };
+  return map[v] || '❓';
+}
+
+function getVerdictClass(v) {
+  return 'v-' + (v || 'unknown').toLowerCase().replace(/ /g, '_');
+}
+
+function fmtTokenPrice(p) {
+  if (!p) return '—';
+  if (p < 0.0001) return '$' + p.toFixed(8);
+  if (p < 0.01) return '$' + p.toFixed(6);
+  if (p < 1) return '$' + p.toFixed(6);
+  return '$' + p.toFixed(4);
+}
+
+function fmtBigNum(n) {
+  if (n === null || n === undefined) return '—';
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '$' + (n/1e3).toFixed(1) + 'K';
+  if (n < 0.01) return '$' + n.toFixed(6);
+  return '$' + n.toLocaleString(undefined, {maximumFractionDigits: 2});
+}
+
+function signalIcon(type) {
+  const map = {
+    'safe': '✅',
+    'info': '📊',
+    'hot': '🔥',
+    'bullish': '📈',
+    'bearish': '📉',
+    'risk': '⚠️',
+    'warning': '⚡',
+  };
+  return map[type] || '📌';
+}
+
+async function fetchAIAnalysis(contract, symbol) {
+  const aiContent = document.getElementById('aiContent');
+  try {
+    const r = await fetch(`/api/ai-advisor?contract=${encodeURIComponent(contract)}`);
+    if (!r.ok) throw new Error('API returned ' + r.status);
+    const data = await r.json();
+
+    document.getElementById('aiLoading').style.display = 'none';
+    aiContent.style.display = 'block';
+    aiContent.innerHTML = renderAIContent(data, symbol);
+  } catch(e) {
+    document.getElementById('aiLoading').style.display = 'none';
+    aiContent.style.display = 'block';
+    aiContent.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">⚠️</div>
+        <div class="empty-text">Failed to get AI analysis: ${e.message}</div>
+        <button class="ai-refresh-btn" onclick="fetchAIAnalysis('${contract}','${symbol||''}')" style="margin-top:16px">⟳ Retry</button>
+      </div>`;
+  }
+}
+
+function renderAIContent(data, symbolHint) {
+  const a = data.analysis || {};
+  const m = a.metrics || {};
+  const ai = data.ai || {};
+  const signals = a.signals || [];
+  const score = a.score || 0;
+  const verdict = ai.verdict || 'hold';
+  const confidence = ai.confidence || 0;
+  const risk = ai.risk_level || 'medium';
+  const reasoning = ai.reasoning || 'No detailed reasoning available.';
+  const keyFactors = ai.key_factors || [];
+  const holdUntil = ai.hold_until || '';
+
+  const sym = m.symbol || symbolHint || '?';
+  const price = m.price_usd;
+  const change = m.price_change_24h || 0;
+  const changeUp = change >= 0;
+  const chain = (a.chain || m.chain || data.chain || 'bsc').toUpperCase();
+
+  const scoreClass = score >= 70 ? 'ai-high' : score >= 50 ? 'ai-mid' : 'ai-low';
+  const confClass = confidence >= 70 ? 'high' : confidence >= 50 ? 'mid' : 'low';
+  const vertClass = getVerdictClass(verdict);
+  const vertLabel = getVerdictLabel(verdict);
+  const vertEmoji = getVerdictEmoji(verdict);
+
+  const signalsHtml = signals.map(s => `
+    <div class="ai-signal-item">
+      <span class="ai-signal-icon">${signalIcon(s.type || 'info')}</span>
+      <span class="ai-signal-label">${s.label || ''}</span>
+      <span class="ai-signal-detail">${s.detail || ''}</span>
+    </div>
+  `).join('');
+
+  const factorsHtml = keyFactors.map(f => `<span class="ai-factor">${f}</span>`).join('');
+
+  // Key metrics
+  const metricsHtml = `
+    <div class="ai-metrics-grid">
+      <div class="ai-metric-item">
+        <div class="label">Liquidity</div>
+        <div class="val">${fmtBigNum(m.liquidity_usd)}</div>
+      </div>
+      <div class="ai-metric-item">
+        <div class="label">Volume 24h</div>
+        <div class="val">${fmtBigNum(m.volume_24h)}</div>
+      </div>
+      <div class="ai-metric-item">
+        <div class="label">Market Cap</div>
+        <div class="val">${fmtBigNum(m.market_cap)}</div>
+      </div>
+      <div class="ai-metric-item">
+        <div class="label">Buy/Sell</div>
+        <div class="val">${m.buy_sell_ratio ? m.buy_sell_ratio.toFixed(2) + 'x' : '—'}</div>
+      </div>
+      <div class="ai-metric-item">
+        <div class="label">24h Txns</div>
+        <div class="val">${m.txns_buy != null ? (m.txns_buy + m.txns_sell).toLocaleString() : '—'}</div>
+      </div>
+      <div class="ai-metric-item">
+        <div class="label">Vol/MC</div>
+        <div class="val">${m.vol_mc_ratio != null ? (m.vol_mc_ratio * 100).toFixed(1) + '%' : '—'}</div>
+      </div>
+    </div>`;
+
+  const holdHtml = holdUntil ? `
+    <div class="ai-section">
+      <div class="ai-section-title">🎯 Exit Strategy</div>
+      <div class="ai-hold">${holdUntil}</div>
+    </div>` : '';
+
+  return `
+    <!-- Price row -->
+    <div class="ai-price-row">
+      <div class="ai-price-sym">${sym}</div>
+      <span class="ai-chain-badge">⛓ ${chain}</span>
+      <div class="ai-price-val">${fmtTokenPrice(price)}</div>
+      <div class="ai-price-change ${changeUp ? 'up' : 'down'}">
+        ${changeUp ? '▲' : '▼'} ${Math.abs(change).toFixed(2)}%
+      </div>
+    </div>
+
+    <!-- Score + Verdict -->
+    <div class="ai-score-wrap">
+      <div class="ai-score-circle ${scoreClass}">${score}</div>
+      <div class="ai-verdict-wrap">
+        <div class="ai-verdict-label">AI Recommendation</div>
+        <div class="ai-verdict-text ${vertClass}">${vertEmoji} ${vertLabel}</div>
+        <div class="ai-conf-row">
+          <div class="ai-conf-bar">
+            <div class="ai-conf-fill ${confClass}" style="width:${confidence}%"></div>
+          </div>
+          <span class="ai-conf-pct">${confidence}%</span>
+        </div>
+        <span class="ai-risk risk-${risk}">${risk === 'high' ? '🔴' : risk === 'medium' ? '🟡' : '🟢'} ${risk.toUpperCase()} Risk</span>
+      </div>
+    </div>
+
+    <!-- Reasoning -->
+    <div class="ai-section">
+      <div class="ai-section-title">🧠 Reasoning</div>
+      <div class="ai-reasoning">${reasoning}</div>
+    </div>
+
+    <!-- Key Factors -->
+    ${factorsHtml ? `
+    <div class="ai-section">
+      <div class="ai-section-title">🔑 Key Factors</div>
+      <div class="ai-factors">${factorsHtml}</div>
+    </div>` : ''}
+
+    ${holdHtml}
+
+    <!-- Signals -->
+    ${signalsHtml ? `
+    <div class="ai-section">
+      <div class="ai-section-title">📡 Signals</div>
+      <div class="ai-signals-list">${signalsHtml}</div>
+    </div>` : ''}
+
+    <!-- Metrics -->
+    <div class="ai-section">
+      <div class="ai-section-title">📊 Key Metrics</div>
+      ${metricsHtml}
+    </div>
+
+    <!-- Refresh button -->
+    <button class="ai-refresh-btn" onclick="fetchAIAnalysis('${data.contract || ''}','${sym}')">⟳ Refresh Analysis</button>
+  `;
 }
 
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
