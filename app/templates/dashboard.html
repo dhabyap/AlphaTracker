@@ -299,13 +299,10 @@ createApp({
     };
 
     const refreshAll = async () => {
-      // Refresh all tokens by re-scanning
       loading.value = true;
-      for (const t of tokens.value) {
-        try {
-          await fetch(`/api/track/${t.contract}`, {method:'POST'});
-        } catch(e) {}
-      }
+      try {
+        await fetch('/api/refresh-all', {method:'POST'});
+      } catch(e) { console.error(e); }
       await fetchTokens();
     };
 

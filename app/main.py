@@ -13,6 +13,7 @@ from typing import Optional
 from app.services.dexscreener import DexScreenerService
 from app.services.analyzer import Analyzer
 from app.services.ai_advisor import AIAdvisor
+from app.services.notifier import send_telegram, check_alerts
 from app.database.models import Database
 
 app = FastAPI(title="Binance Alpha Tracker")
@@ -172,6 +173,71 @@ async def ai_advisor(contract: str = Query(...)):
         "contract": contract,
         "analysis": analysis,
         "ai": recommendation,
+    }
+
+
+@app.post("/api/refresh-all")
+async def refresh_all():
+    """Refresh all tracked tokens and send alerts on changes."""
+    old_tokens = db.get_all_tokens(limit=100)
+    old_snapshots = []
+    for t in old_tokens:
+        a = t.get("latest_analysis") or {}
+        if isinstance(a, str):
+            a = json.loads(a) if a else {}
+        m = a.get("metrics", {})
+        old_snapshots.append({
+            "contract": t["contract"],
+            "symbol": t["symbol"],
+            "score": a.get("score", 0),
+            "price": m.get("price_usd", 0),
+        })
+
+    refreshed = 0
+    errors = 0
+    for t in old_tokens:
+        try:
+            pairs = dex.search(t["contract"])
+            if pairs:
+                analysis = analyzer.analyze(pairs)
+                db.save_analysis(t["contract"], analysis)
+                refreshed += 1
+        except:
+            errors += 1
+
+    # Check for alerts
+    new_tokens = db.get_all_tokens(limit=100)
+    new_snapshots = []
+    for t in new_tokens:
+        a = t.get("latest_analysis") or {}
+        if isinstance(a, str):
+            a = json.loads(a) if a else {}
+        m = a.get("metrics", {})
+        new_snapshots.append({
+            "contract": t["contract"],
+            "symbol": t["symbol"],
+            "score": a.get("score", 0),
+            "price": m.get("price_usd", 0),
+        })
+
+    alerts = check_alerts(old_snapshots, new_snapshots)
+
+    # Send Telegram summary
+    summary = f"🔍 *AlphaTracker Refresh*\n{refreshed} tokens refreshed"
+    if errors:
+        summary += f"\n⚠️ {errors} errors"
+    summary += f"\n{'📬 ' + str(len(alerts)) + ' alerts' if alerts else '✅ No significant changes'}"
+    send_telegram(summary)
+
+    if alerts:
+        for alert in alerts[:5]:  # Max 5 alerts per refresh
+            send_telegram(alert)
+
+    return {
+        "status": "ok",
+        "refreshed": refreshed,
+        "errors": errors,
+        "alerts": len(alerts),
     }
 
 
