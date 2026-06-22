@@ -15,21 +15,21 @@ class AIAdvisor:
 
     def analyze(self, context: str) -> dict:
         """Get AI recommendation for a token based on market data."""
-        prompt = f"""Anda adalah analis kripto profesional. Analisis token ini dan beri rekomendasi:
+        prompt = f"""You are a professional crypto analyst. Analyze this token and give a recommendation:
 
 {context}
 
-Beri analisis dalam format JSON:
+Respond in JSON format only:
 {{
   "verdict": "strong_buy | buy | hold | avoid | strong_sell",
   "confidence": 0-100,
-  "reasoning": "2-3 kalimat analisis dalam Bahasa Indonesia campur Inggris, natural kayak ngobrol",
-  "key_factors": ["faktor1", "faktor2"],
+  "reasoning": "2-3 sentence analysis in English, concise and natural",
+  "key_factors": ["factor1", "factor2"],
   "risk_level": "low | medium | high",
-  "hold_until": "kondisi kapan sebaiknya jual (misal: turun 20% dari harga sekarang, atau gain 50%)"
+  "hold_until": "condition for selling (e.g. drop 20% from current price, or gain 50%)"
 }}
 
-Langsung JSON saja, tanpa markdown."""
+JSON only, no markdown."""
         try:
             r = requests.post(
                 self.url,
@@ -69,6 +69,6 @@ Langsung JSON saja, tanpa markdown."""
             return json.loads(content)
 
         except json.JSONDecodeError as e:
-            return {"verdict": "hold", "confidence": 50, "reasoning": "Data tersedia, parsing AI error.", "risk_level": "medium", "hold_until": "Harga di bawah support"}
+            return {"verdict": "hold", "confidence": 50, "reasoning": "Data available, AI parsing error.", "risk_level": "medium", "hold_until": "Price below support"}
         except Exception as e:
             return {"verdict": "unknown", "confidence": 0, "reasoning": f"Error: {str(e)}"}
