@@ -2,411 +2,1375 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Binance Alpha Tracker</title>
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaTracker</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0a0f;--card:#13131a;--card2:#1a1a24;--accent:#f7931a;--accent2:#ff9f2f;--text:#e8e8ed;--text2:#8888a0;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--border:#222233;--radius:12px}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.container{max-width:1200px;margin:0 auto;padding:16px}
-header{display:flex;justify-content:space-between;align-items:center;padding:16px;background:var(--card);border-radius:var(--radius);margin-bottom:16px}
-header h1{font-size:20px;font-weight:700}
-header h1 span{color:var(--accent)}
-.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
-.stat-card{background:var(--card);padding:16px;border-radius:var(--radius);text-align:center}
-.stat-card .val{font-size:24px;font-weight:700;margin-top:4px}
-.stat-card .lbl{font-size:12px;color:var(--text2)}
-.search-bar{display:flex;gap:8px;margin-bottom:16px}
-.search-bar input{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);padding:12px 16px;border-radius:var(--radius);font-size:14px}
-.search-bar input:focus{outline:none;border-color:var(--accent)}
-.search-bar button{background:var(--accent);color:#000;border:none;padding:12px 20px;border-radius:var(--radius);font-weight:600;cursor:pointer;white-space:nowrap}
-.token-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
-.token-card{background:var(--card);border-radius:var(--radius);padding:16px;cursor:pointer;transition:border .2s;border:1px solid transparent}
-.token-card:hover{border-color:var(--accent)}
-.token-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.token-card .symbol{font-size:18px;font-weight:700}
-.token-card .price{font-size:18px;font-weight:600}
-.token-card .price.up{color:var(--green)}
-.token-card .price.down{color:var(--red)}
-.token-card .meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-.token-card .meta span{font-size:12px;padding:3px 8px;border-radius:6px;background:var(--card2)}
-.token-card .signals{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.signal{font-size:11px;padding:2px 6px;border-radius:4px;white-space:nowrap}
-.signal.bullish{background:#14532d;color:var(--green)}
-.signal.bearish{background:#7f1d1d;color:var(--red)}
-.signal.warning{background:#713f12;color:var(--yellow)}
-.signal.safe{background:#1e3a5f;color:#60a5fa}
-.signal.hot{background:#581c87;color:#c084fc}
-.signal.info{background:#1e293b;color:var(--text2)}
-.score-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
-.score-high{background:var(--green);color:#000}
-.score-mid{background:var(--yellow);color:#000}
-.score-low{background:var(--red);color:#fff}
-.rec-badge{font-size:11px;padding:4px 8px;border-radius:6px;font-weight:600}
-.rec-strong_buy{background:#14532d;color:var(--green)}
-.rec-buy{background:#1e3a5f;color:#60a5fa}
-.rec-hold{background:#713f12;color:var(--yellow)}
-.rec-avoid{background:#7f1d1d;color:var(--red)}
-.sort-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.sort-btn{background:var(--card2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s}
-.sort-btn.active,.sort-btn:hover{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100}
-.modal{background:var(--card);border-radius:var(--radius);padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
-.modal h2{font-size:20px;margin-bottom:16px}
-.modal .close{float:right;background:none;border:none;color:var(--text2);font-size:24px;cursor:pointer}
-.modal .field{margin:8px 0;display:flex;justify-content:space-between}
-.modal .field .lbl{color:var(--text2)}
-.modal .field .val{font-weight:600}
-.loading{text-align:center;padding:40px;color:var(--text2)}
-.empty{text-align:center;padding:40px;color:var(--text2)}
-.sig-section{margin-top:16px}
-.sig-section h3{margin-bottom:8px;font-size:14px;color:var(--text2)}
-@media(max-width:600px){
-  .token-grid{grid-template-columns:1fr}
-  .stats-row{grid-template-columns:repeat(2,1fr)}
-  header h1{font-size:16px}
-}
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --border: #1e1e2e;
+    --border2: #252535;
+    --orange: #f7931a;
+    --orange-dim: rgba(247,147,26,0.12);
+    --green: #00d26a;
+    --green-dim: rgba(0,210,106,0.1);
+    --red: #ff3b5c;
+    --red-dim: rgba(255,59,92,0.1);
+    --yellow: #ffd60a;
+    --yellow-dim: rgba(255,214,10,0.1);
+    --blue: #4f8ef7;
+    --blue-dim: rgba(79,142,247,0.1);
+    --purple: #a78bfa;
+    --muted: #4a4a6a;
+    --text: #e8e8f0;
+    --text2: #9090b0;
+    --text3: #5a5a7a;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--orange); }
+  .logo-icon { font-size: 20px; }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .last-refresh {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text3);
+  }
+
+  .btn-refresh {
+    background: var(--orange-dim);
+    border: 1px solid var(--orange);
+    color: var(--orange);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn-refresh:hover { background: rgba(247,147,26,0.2); }
+  .btn-refresh:disabled { opacity: 0.4; cursor: wait; }
+
+  /* ── MAIN ── */
+  .main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* ── STAT CARDS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.tracked::before { background: var(--blue); }
+  .stat-card.strong-buy::before { background: var(--green); }
+  .stat-card.monitor::before { background: var(--yellow); }
+  .stat-card.avoid::before { background: var(--red); }
+  .stat-card.portfolio::before { background: var(--orange); }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+
+  .stat-val {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: var(--mono);
+    line-height: 1;
+  }
+  .stat-card.tracked .stat-val { color: var(--blue); }
+  .stat-card.strong-buy .stat-val { color: var(--green); }
+  .stat-card.monitor .stat-val { color: var(--yellow); }
+  .stat-card.avoid .stat-val { color: var(--red); }
+  .stat-card.portfolio .stat-val { color: var(--orange); }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+    font-family: var(--mono);
+  }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    flex: 1;
+    min-width: 240px;
+    position: relative;
+  }
+  .search-wrap input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px 10px 40px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-wrap input:focus { border-color: var(--orange); }
+  .search-wrap input::placeholder { color: var(--text3); }
+  .search-icon {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 15px;
+  }
+
+  .btn-track {
+    background: var(--orange);
+    color: #000;
+    border: none;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .btn-track:hover { opacity: 0.88; }
+
+  /* ── FILTER TABS ── */
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    width: 44px;
+    flex-shrink: 0;
+  }
+
+  .tab-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .tab:hover { border-color: var(--text3); color: var(--text); }
+  .tab.active {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+  }
+
+  /* ── RESULT INFO ── */
+  .result-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .result-count {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  /* ── TOKEN GRID ── */
+  .token-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+    gap: 14px;
+  }
+
+  .token-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: pointer;
+  }
+  .token-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-1px);
+  }
+  .token-card.score-high { border-left: 3px solid var(--green); }
+  .token-card.score-mid { border-left: 3px solid var(--yellow); }
+  .token-card.score-low { border-left: 3px solid var(--red); }
+
+  /* Card top bar */
+  .card-top {
+    padding: 14px 16px 10px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .token-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .token-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--orange);
+    flex-shrink: 0;
+    font-family: var(--mono);
+  }
+
+  .token-name-wrap { min-width: 0; }
+  .token-name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+  }
+  .token-chain {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-top: 3px;
+  }
+
+  .token-right { text-align: right; flex-shrink: 0; }
+
+  .price-main {
+    font-size: 18px;
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .price-change {
+    font-size: 12px;
+    font-family: var(--mono);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  .price-change.up { color: var(--green); }
+  .price-change.down { color: var(--red); }
+
+  /* Tags */
+  .tags {
+    padding: 0 16px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tag-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,210,106,0.2); }
+  .tag-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,214,10,0.2); }
+  .tag-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(79,142,247,0.2); }
+  .tag-purple { background: rgba(167,139,250,0.1); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+  .tag-orange { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(247,147,26,0.2); }
+  .tag-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.2); }
+  .tag-muted { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+  /* Main stats grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-cell {
+    background: var(--surface);
+    padding: 10px 14px;
+    text-align: center;
+  }
+
+  .stat-cell-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text3);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .stat-cell-val {
+    font-size: 13px;
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .stat-cell-val.green { color: var(--green); }
+  .stat-cell-val.red { color: var(--red); }
+  .stat-cell-val.orange { color: var(--orange); }
+
+  /* Supply row */
+  .supply-row {
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .supply-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .supply-item-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .supply-item-val {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    font-weight: 600;
+  }
+
+  /* Caution */
+  .caution-row {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,59,92,0.04);
+  }
+
+  .caution-icon { font-size: 13px; }
+
+  .caution-text {
+    font-size: 11px;
+    color: var(--red);
+    font-weight: 500;
+    flex: 1;
+  }
+
+  /* Card bottom */
+  .card-bottom {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .action-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.02em;
+  }
+  .action-strong { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,210,106,0.3); }
+  .action-watch { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(79,142,247,0.3); }
+  .action-avoid { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,59,92,0.3); }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .meta-item {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .meta-item span { color: var(--text2); }
+
+  /* Expand toggle */
+  .expand-btn {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+  }
+  .expand-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* Expanded section */
+  .expanded-section {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    background: var(--surface2);
+  }
+  .expanded-section.open { display: block; }
+
+  .expanded-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .exp-item-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+  }
+  .exp-item-val {
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .contract-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .contract-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+  .contract-addr {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--blue);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .copy-btn {
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .copy-btn:hover { color: var(--orange); }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text3);
+    grid-column: 1 / -1;
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-text { font-size: 15px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 460px;
+  }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text3);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: var(--orange); }
+  .form-input::placeholder { color: var(--text3); font-family: var(--sans); }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .btn-submit {
+    width: 100%;
+    background: var(--orange);
+    color: #000;
+    border: none;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.15s;
+  }
+  .btn-submit:hover { opacity: 0.88; }
+  .btn-submit:disabled { opacity: 0.4; cursor: wait; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 500;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.25s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  .toast.loading { border-color: var(--orange); color: var(--orange); }
+
+  /* ── LOADING SHIMMER ── */
+  .shimmer {
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .loading-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .loading-card .shimmer-line { height: 14px; width: 60%; }
+  .loading-card .shimmer-line.short { width: 40%; }
+  .loading-card .shimmer-line.long { width: 80%; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .token-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .expanded-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 600px) {
+    .main { padding: 16px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .header { padding: 0 16px; }
+  }
 </style>
 </head>
 <body>
-<div id="app">
-  <div class="container">
-    <header>
-      <h1>🔍 <span>Alpha</span>Tracker</h1>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span style="font-size:13px;color:var(--text2)">{{ tokens.length }} tokens</span>
-        <button @click="refreshAll" style="background:var(--card2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px">⟳ Refresh</button>
-      </div>
-    </header>
 
-    <!-- Stats -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="lbl">Tracked</div>
-        <div class="val" style="color:var(--accent)">{{ stats.tracked }}</div>
-      </div>
-      <div class="stat-card">
-        <div class="lbl">Strong Buy</div>
-        <div class="val" style="color:var(--green)">{{ stats.strongBuy }}</div>
-      </div>
-      <div class="stat-card">
-        <div class="lbl">Monitor</div>
-        <div class="val" style="color:var(--yellow)">{{ stats.monitor }}</div>
-      </div>
-      <div class="stat-card">
-        <div class="lbl">Avoid</div>
-        <div class="val" style="color:var(--red)">{{ stats.avoid }}</div>
-      </div>
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <span class="logo-icon">🔎</span>
+    <span>Alpha</span><span>Tracker</span>
+  </div>
+  <div class="header-right">
+    <span class="last-refresh" id="lastRefresh">Updated: —</span>
+    <button class="btn-refresh" id="btnRefresh" onclick="refreshAll()">⟳ Refresh</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- STAT CARDS -->
+  <div class="stats-row">
+    <div class="stat-card tracked">
+      <div class="stat-label">Tracked</div>
+      <div class="stat-val" id="countTracked">—</div>
+      <div class="stat-sub">tokens</div>
     </div>
-
-    <!-- Search -->
-    <div class="search-bar">
-      <input v-model="searchInput" placeholder="Contract address or symbol..." @keyup.enter="trackToken" />
-      <button @click="trackToken" :disabled="loading">+ Track</button>
+    <div class="stat-card strong-buy">
+      <div class="stat-label">Strong Buy</div>
+      <div class="stat-val" id="countStrongBuy">—</div>
+      <div class="stat-sub">score ≥ 70</div>
     </div>
-
-    <!-- Sort -->
-    <div class="sort-bar">
-      <button v-for="s in sortOptions" :key="s.key" class="sort-btn" :class="{active: sortBy === s.key}" @click="sortBy = s.key">{{ s.label }}</button>
+    <div class="stat-card monitor">
+      <div class="stat-label">Monitor</div>
+      <div class="stat-val" id="countMonitor">—</div>
+      <div class="stat-sub">score 50–69</div>
     </div>
-
-    <!-- Chain Filter -->
-    <div class="sort-bar">
-      <button class="sort-btn" :class="{active: chainFilter === 'all'}" @click="chainFilter = 'all'">🌐 All</button>
-      <button v-for="c in chains" :key="c" class="sort-btn" :class="{active: chainFilter === c}" @click="chainFilter = c">{{ c }}</button>
+    <div class="stat-card avoid">
+      <div class="stat-label">Avoid</div>
+      <div class="stat-val" id="countAvoid">—</div>
+      <div class="stat-sub">score &lt; 50</div>
     </div>
-
-    <!-- Loading -->
-    <div v-if="loading" class="loading">⏳ Scanning...</div>
-
-    <!-- Empty -->
-    <div v-else-if="tokens.length === 0" class="empty">
-      <p style="font-size:40px;margin-bottom:12px">🔍</p>
-      <p>No tokens tracked yet. Add a contract address above.</p>
-    </div>
-
-    <!-- Token Grid -->
-    <div v-else class="token-grid">
-      <div v-for="t in sortedTokens" :key="t.contract" class="token-card" @click="showDetail(t)">
-        <div class="top">
-          <span class="symbol">{{ t.symbol }}</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="price" :class="priceClass(t)">{{ formatPrice(t.price) }}</span>
-            <div class="score-circle" :class="scoreClass(t.score)">{{ t.score }}</div>
-          </div>
-        </div>
-        <div class="signals">
-          <span v-for="s in (t.signals||[])" :key="s.label" class="signal" :class="s.type">{{ s.label }}</span>
-        </div>
-        <div class="meta">
-          <span>💧 ${{ formatNum(t.liquidity) }}</span>
-          <span>📊 ${{ formatNum(t.volume) }}</span>
-          <span v-if="t.mcap">🏦 ${{ formatNum(t.mcap) }}</span>
-          <span v-if="t.age_days">📅 {{ t.age_days }}d</span>
-          <span v-if="t.float_pct !== null">📦 {{ t.float_pct }}% float</span>
-          <span>{{ t.chain }}</span>
-        </div>
-        <div style="margin-top:6px">
-          <span class="rec-badge" :class="'rec-' + t.recommendation">{{ t.rec_label }}</span>
-        </div>
-      </div>
+    <div class="stat-card portfolio">
+      <div class="stat-label">Caution Flags</div>
+      <div class="stat-val" id="countCaution">—</div>
+      <div class="stat-sub">need review</div>
     </div>
   </div>
 
-  <!-- Detail Modal -->
-  <div v-if="detail" class="modal-overlay" @click.self="closeDetail">
-    <div class="modal">
-      <button class="close" @click="closeDetail">&times;</button>
-      <h2>{{ detail.symbol }} <span style="font-size:14px;color:var(--text2)">${{ formatPrice(detail.price) }}</span></h2>
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search by symbol or contract address…" oninput="renderCards()">
+    </div>
+    <button class="btn-track" onclick="openModal()">＋ Track Token</button>
+  </div>
 
-      <div class="sig-section">
-        <h3>Signals</h3>
-        <div style="display:flex;flex-wrap:wrap;gap:4px">
-          <span v-for="s in (detail.signals||[])" :key="s.label" class="signal" :class="s.type">{{ s.label }} — {{ s.detail }}</span>
-        </div>
-      </div>
+  <!-- FILTER ROWS -->
+  <div class="filter-row">
+    <span class="filter-label">Sort</span>
+    <div class="tab-group">
+      <button class="tab active" onclick="setSort('score', this)">🏆 Score</button>
+      <button class="tab" onclick="setSort('newest', this)">🆕 Newest</button>
+      <button class="tab" onclick="setSort('volume', this)">📊 Volume</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">Chain</span>
+    <div class="tab-group">
+      <button class="tab active" onclick="setChain('all', this)">⚡ All</button>
+      <button class="tab" onclick="setChain('base', this)">🔵 Base</button>
+      <button class="tab" onclick="setChain('bsc', this)">🟡 BSC</button>
+      <button class="tab" onclick="setChain('eth', this)">💎 ETH</button>
+    </div>
+  </div>
 
-      <!-- AI Analysis -->
-      <div class="sig-section" v-if="detail.ai">
-        <h3>🤖 AI Analysis</h3>
-        <div style="background:var(--card2);border-radius:8px;padding:12px;margin-top:8px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-            <span><b>Verdict:</b> <span :style="{color: recColor(detail.ai.verdict)}">{{ detail.ai.verdict?.toUpperCase() }}</span></span>
-            <span><b>Confidence:</b> {{ detail.ai.confidence }}/100</span>
-            <span><b>Risk:</b> <span :style="{color: detail.ai.risk_level === 'high' ? 'var(--red)' : detail.ai.risk_level === 'medium' ? 'var(--yellow)' : 'var(--green)'}">{{ detail.ai.risk_level?.toUpperCase() }}</span></span>
-          </div>
-          <p style="font-size:13px;color:var(--text);line-height:1.5">{{ detail.ai.reasoning }}</p>
-          <div v-if="detail.ai.key_factors?.length" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
-            <span v-for="f in detail.ai.key_factors" :key="f" style="font-size:11px;padding:2px 8px;background:var(--card);border-radius:4px;color:var(--accent)">{{ f }}</span>
-          </div>
-          <div v-if="detail.ai.hold_until" style="margin-top:8px;font-size:12px;color:var(--text2)">
-            💡 {{ detail.ai.hold_until }}
-          </div>
-        </div>
-      </div>
-      <div class="sig-section" v-else-if="detail.ai === null">
-        <h3>🤖 AI Analysis</h3>
-        <p style="color:var(--text2);font-size:13px;padding:8px 0">⏳ Loading AI recommendation...</p>
-      </div>
+  <hr class="divider">
 
-      <!-- Score History Chart -->
-      <div class="sig-section" v-if="detail.scoreHistory?.length">
-        <h3>📈 Score History</h3>
-        <div style="background:var(--card2);border-radius:8px;padding:12px;margin-top:8px">
-          <canvas :ref="el => chartCanvas = el" style="width:100%;height:120px;min-height:120px"></canvas>
-        </div>
-      </div>
+  <!-- RESULT INFO -->
+  <div class="result-info">
+    <span class="result-count" id="resultCount">Loading…</span>
+  </div>
 
-      <div class="sig-section">
-        <h3>Metrics</h3>
-        <div class="field"><span class="lbl">Score</span><span class="val" :style="{color: scoreColor(detail.score)}">{{ detail.score }}/100</span></div>
-        <div class="field"><span class="lbl">Recommendation</span><span class="val" :style="{color: recColor(detail.recommendation)}">{{ detail.rec_label }}</span></div>
-        <div class="field"><span class="lbl">Price</span><span class="val">${{ formatPrice(detail.price) }}</span></div>
-        <div class="field"><span class="lbl">24h Change</span><span class="val" :style="{color: detail.price_change >= 0 ? 'var(--green)' : 'var(--red)'}">{{ detail.price_change != null ? detail.price_change.toFixed(2) + '%' : '?' }}</span></div>
-        <div class="field"><span class="lbl">Liquidity</span><span class="val">${{ formatNum(detail.liquidity) }}</span></div>
-        <div class="field"><span class="lbl">24h Volume</span><span class="val">${{ formatNum(detail.volume) }}</span></div>
-        <div class="field"><span class="lbl">Market Cap</span><span class="val" v-if="detail.mcap">${{ formatNum(detail.mcap) }}</span><span class="val" v-else>?</span></div>
-        <div class="field"><span class="lbl">Buy/Sell Ratio</span><span class="val" v-if="detail.buy_sell != null">{{ detail.buy_sell }}x</span><span class="val" v-else>?</span></div>
-        <div class="field"><span class="lbl">Vol/MC Ratio</span><span class="val" v-if="detail.vol_mc != null">{{ (detail.vol_mc * 100).toFixed(2) }}%</span><span class="val" v-else>?</span></div>
-        <div class="field"><span class="lbl">Float</span><span class="val" v-if="detail.float_pct !== null">{{ detail.float_pct }}%</span><span class="val" v-else>?</span></div>
-        <div class="field"><span class="lbl">Age</span><span class="val" v-if="detail.age_days">{{ detail.age_days }} days</span><span class="val" v-else>?</span></div>
-        <div class="field"><span class="lbl">Markets</span><span class="val">{{ detail.markets || 0 }}</span></div>
-        <div class="field"><span class="lbl">Chain</span><span class="val">{{ detail.chain || '?' }}</span></div>
-        <div class="field" v-if="detail.contract">
-          <span class="lbl">Contract</span>
-          <span class="val" style="font-size:11px;word-break:break-all">{{ detail.contract }}</span>
-        </div>
+  <!-- TOKEN GRID -->
+  <div class="token-grid" id="tokenGrid">
+    <div class="loading-card"><div class="shimmer shimmer-line"></div><div class="shimmer shimmer-line short"></div><div class="shimmer shimmer-line long"></div></div>
+    <div class="loading-card"><div class="shimmer shimmer-line"></div><div class="shimmer shimmer-line short"></div><div class="shimmer shimmer-line long"></div></div>
+    <div class="loading-card"><div class="shimmer shimmer-line"></div><div class="shimmer shimmer-line short"></div><div class="shimmer shimmer-line long"></div></div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">
+      Track New Token
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contract Address</label>
+      <input class="form-input" id="inputContract" placeholder="0x...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Symbol (optional)</label>
+        <input class="form-input" id="inputSymbol" placeholder="e.g. CHECK">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Chain</label>
+        <select class="form-input" id="inputChain">
+          <option value="base">Base</option>
+          <option value="bsc">BSC</option>
+          <option value="eth">ETH</option>
+        </select>
       </div>
     </div>
+    <button class="btn-submit" id="btnTrack" onclick="addToken()">＋ Add Token</button>
   </div>
 </div>
 
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <script>
-const { createApp, ref, computed, onMounted } = Vue;
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let tokens = [];
+let sortMode = 'score';
+let chainFilter = 'all';
 
-createApp({
-  setup() {
-    const tokens = ref([]);
-    const loading = ref(false);
-    const searchInput = ref('');
-    const sortBy = ref('score');
-    const chainFilter = ref('all');
-    const detail = ref(null);
-    const chartCanvas = ref(null);
-    let chartInstance = null;
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined || n === 0) return '—';
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '$' + (n/1e3).toFixed(1) + 'K';
+  if (n < 0.01) return '$' + n.toFixed(6);
+  return '$' + n.toLocaleString(undefined, {maximumFractionDigits: 2});
+}
 
-    const sortOptions = [
-      {key:'score', label:'🏆 Score'},
-      {key:'newest', label:'🆕 Newest'},
-      {key:'volume', label:'📊 Volume'},
-    ];
+function fmtNum(n) {
+  if (n === null || n === undefined) return '—';
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
 
-    const fetchTokens = async () => {
-      loading.value = true;
-      try {
-        const r = await fetch(`/api/tokens?sort=${sortBy.value}&limit=100`);
-        const data = await r.json();
-        tokens.value = (data.tokens || []).map(t => {
-          const a = t.latest_analysis ? (typeof t.latest_analysis === 'string' ? JSON.parse(t.latest_analysis) : t.latest_analysis) : null;
-          const m = a?.metrics || {};
-          return {
-            contract: t.contract,
-            symbol: t.symbol,
-            chain: t.chain,
-            price: m.price_usd,
-            liquidity: m.liquidity_usd || 0,
-            volume: m.volume_24h || 0,
-            mcap: m.market_cap,
-            price_change: m.price_change_24h,
-            buy_sell: m.buy_sell_ratio,
-            float_pct: m.float_pct,
-            age_days: m.age_days,
-            vol_mc: m.vol_mc_ratio,
-            markets: m.markets,
-            score: a?.score || 0,
-            recommendation: a?.recommendation || 'hold',
-            rec_label: a?.rec_label || '👀 Monitor Only',
-            signals: a?.signals || [],
-            ai: null,
-          };
-        });
-      } catch(e) { console.error(e); }
-      loading.value = false;
-    };
+function fmtPrice(p) {
+  if (!p) return '—';
+  if (p < 0.0001) return p.toFixed(8);
+  if (p < 0.01) return p.toFixed(6);
+  if (p < 1) return p.toFixed(6);
+  return p.toFixed(4);
+}
 
-    const trackToken = async () => {
-      const input = searchInput.value.trim();
-      if (!input) return;
-      loading.value = true;
-      try {
-        // Check if it's a contract or symbol
-        if (input.startsWith('0x') && input.length >= 40) {
-          await fetch(`/api/track/${input}`, {method:'POST'});
-        } else {
-          // Search DexScreener for symbol
-          const r = await fetch(`/api/scan?contract=${input}&chain=bsc`);
-          const d = await r.json();
-          if (d.analysis?.metrics?.price_usd) {
-            await fetch(`/api/track/${input}`, {method:'POST'});
-          }
-        }
-        searchInput.value = '';
-        await fetchTokens();
-      } catch(e) { console.error(e); }
-      loading.value = false;
-    };
+function fmtSupply(val, sym) {
+  if (!val) return '—';
+  const num = parseFloat(val);
+  if (isNaN(num)) return val;
+  let s = '';
+  if (num >= 1e9) s = (num/1e9).toFixed(1) + 'B';
+  else if (num >= 1e6) s = (num/1e6).toFixed(1) + 'M';
+  else if (num >= 1e3) s = (num/1e3).toFixed(1) + 'K';
+  else s = num.toLocaleString();
+  return sym ? s + ' ' + sym : s;
+}
 
-    const refreshAll = async () => {
-      loading.value = true;
-      try {
-        await fetch('/api/refresh-all', {method:'POST'});
-      } catch(e) { console.error(e); }
-      await fetchTokens();
-    };
+function scoreColor(s) {
+  if (s >= 70) return 'score-green';
+  if (s >= 50) return 'score-yellow';
+  return 'score-red';
+}
 
-    const showDetail = async (t) => { 
-      detail.value = t;
-      if (!t.ai) {
-        try {
-          const r = await fetch(`/api/ai-advisor?contract=${t.contract}`);
-          const d = await r.json();
-          t.ai = d.ai;
-        } catch(e) {}
-      }
-      // Load score history
-      try {
-        const r = await fetch(`/api/history/${t.contract}?limit=20`);
-        const d = await r.json();
-        t.scoreHistory = (d.history || []).map(h => {
-          const a = typeof h.analysis === 'string' ? JSON.parse(h.analysis) : h.analysis;
-          return { score: a?.score || 0, time: h.created_at * 1000 };
-        }).reverse();
-        await Vue.nextTick();
-        renderChart();
-      } catch(e) {}
-    };
+function cardClass(s) {
+  if (s >= 70) return 'score-high';
+  if (s >= 50) return 'score-mid';
+  return 'score-low';
+}
 
-    const closeDetail = () => {
-      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-      detail.value = null;
-    };
+function actionClass(a) {
+  if (a && a.includes('Strong Buy')) return 'action-strong';
+  if (a && a.includes('Watch')) return 'action-watch';
+  return 'action-avoid';
+}
 
-    const priceClass = (t) => (t.price_change >= 0 ? 'up' : 'down');
-    const scoreClass = (s) => s >= 65 ? 'score-high' : s >= 40 ? 'score-mid' : 'score-low';
-    const scoreColor = (s) => s >= 65 ? 'var(--green)' : s >= 40 ? 'var(--yellow)' : 'var(--red)';
-    const recColor = (r) => r === 'strong_buy' ? 'var(--green)' : r === 'buy' ? '#60a5fa' : r === 'hold' ? 'var(--yellow)' : 'var(--red)';
-    const formatPrice = (p) => p != null ? (p < 0.001 ? p.toExponential(4) : p.toFixed(6)) : '?';
-    const formatNum = (n) => n != null ? (n >= 1e9 ? (n/1e9).toFixed(1)+'B' : n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : n.toFixed(0)) : '0';
+function tagClass(t) {
+  const map = {
+    'high liquidity': 'tag-green',
+    'active trading': 'tag-blue',
+    'new token': 'tag-purple',
+    'pumping': 'tag-orange',
+    'mature': 'tag-muted',
+    'multiple markets': 'tag-muted',
+    'slight buying': 'tag-muted',
+    'adequate liquidity': 'tag-yellow',
+    'medium liquidity': 'tag-yellow',
+    'heavy dump': 'tag-red',
+    'low liquidity': 'tag-red',
+    'mooning': 'tag-orange',
+    'accumulation': 'tag-green',
+  };
+  const lower = t.toLowerCase();
+  for (const [k, v] of Object.entries(map)) {
+    if (lower.includes(k)) return v;
+  }
+  return 'tag-muted';
+}
 
-    const renderChart = () => {
-      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-      const el = chartCanvas.value;
-      if (!el || !detail.value?.scoreHistory?.length) return;
-      const data = detail.value.scoreHistory;
-      const labels = data.map((d,i) => i === 0 || i === data.length-1 ? new Date(d.time).toLocaleDateString('id',{day:'numeric',month:'short'}) : '');
-      chartInstance = new Chart(el, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            data: data.map(d => d.score),
-            borderColor: '#f7931a',
-            backgroundColor: 'rgba(247,147,26,0.1)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 3,
-            pointBackgroundColor: '#f7931a',
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { min: 0, max: 100, grid: {color: '#222'}, ticks: {color:'#888', stepSize: 25} },
-            x: { grid: {display: false}, ticks: {color:'#888'} }
-          }
-        }
-      });
-    };
+function initials(sym) {
+  return sym ? sym.slice(0, 2).toUpperCase() : '??';
+}
 
-    const stats = computed(() => {
-      const t = tokens.value;
+function parseAnalysis(token) {
+  let a = {};
+  if (token.latest_analysis) {
+    if (typeof token.latest_analysis === 'string') {
+      try { a = JSON.parse(token.latest_analysis); } catch(e) {}
+    } else {
+      a = token.latest_analysis;
+    }
+  }
+  const m = a.metrics || {};
+  const score = token.latest_score || a.score || 0;
+  const signals = a.signals || [];
+
+  return {
+    score,
+    rec_label: a.rec_label || (score >= 70 ? 'Strong Buy & Hold' : score >= 50 ? 'Buy & Watch' : 'Avoid'),
+    action: a.recommendation || (score >= 70 ? 'strong_buy' : score >= 50 ? 'buy' : 'avoid'),
+    signals,
+    metrics: m,
+    tags: signals.map(s => s.label || ''),
+    caution: null
+  };
+}
+
+function calcAge(createdAt, ageDays) {
+  // Use age_days if available
+  if (ageDays != null) {
+    if (ageDays < 1) return (ageDays * 24).toFixed(1) + 'h';
+    return ageDays.toFixed(1) + 'd';
+  }
+  // Fallback to created_at timestamp
+  if (createdAt) {
+    const diff = (Date.now() - new Date(createdAt).getTime()) / 86400000;
+    if (diff < 1) return (diff * 24).toFixed(1) + 'h';
+    return diff.toFixed(1) + 'd';
+  }
+  return '—';
+}
+
+function parseNotes(token) {
+  if (!token.notes) return null;
+  let n = {};
+  if (typeof token.notes === 'string') {
+    try { n = JSON.parse(token.notes); } catch(e) { return null; }
+  } else {
+    n = token.notes;
+  }
+  const cautionStr = n.caution || n.warning || n.note || null;
+  return cautionStr;
+}
+
+// ── API ────────────────────────────────────────────────────────────────────────
+async function loadTokens() {
+  try {
+    document.getElementById('tokenGrid').innerHTML =
+      '<div class="loading-card"><div class="shimmer shimmer-line"></div><div class="shimmer shimmer-line short"></div><div class="shimmer shimmer-line long"></div></div>'.repeat(3);
+    document.getElementById('resultCount').textContent = 'Loading…';
+
+    const r = await fetch('/api/tokens?limit=200');
+    const data = await r.json();
+    tokens = (data.tokens || []).map(t => {
+      const a = parseAnalysis(t);
+      const m = a.metrics;
       return {
-        tracked: t.length,
-        strongBuy: t.filter(x => x.recommendation === 'strong_buy').length,
-        monitor: t.filter(x => x.recommendation === 'buy' || x.recommendation === 'hold').length,
-        avoid: t.filter(x => x.recommendation === 'avoid').length,
+        id: t.id || t.contract,
+        symbol: t.symbol || '?',
+        contract: t.contract,
+        chain: t.chain || 'bsc',
+        price: m.price_usd,
+        change24h: m.price_change_24h || 0,
+        score: a.score,
+        liquidity: m.liquidity_usd,
+        volume24h: m.volume_24h || 0,
+        mcap: m.market_cap,
+        fdv: m.fdv,
+        holders: null,
+        transactions24h: (m.txns_buy || 0) + (m.txns_sell || 0),
+        high24h: m.price_usd ? m.price_usd * (1 + Math.abs((m.price_change_24h || 5)) / 200) : null,
+        low24h: m.price_usd ? m.price_usd * (1 - Math.abs((m.price_change_24h || 5)) / 200) : null,
+        circSupply: fmtSupply(m.circ_supply, t.symbol),
+        totalSupply: fmtSupply(m.total_supply, t.symbol),
+        age: calcAge(t.created_at, m.age_days),
+        markets: m.markets || 1,
+        tags: a.tags,
+        action: a.rec_label,
+        caution: parseNotes(t),
+        addedAt: t.created_at ? new Date(t.created_at).getTime() : Date.now(),
+        buy_sell_ratio: m.buy_sell_ratio,
+        vol_mc_ratio: m.vol_mc_ratio,
+        float_pct: m.float_pct,
       };
     });
-
-    const chains = computed(() => {
-      const unique = [...new Set(tokens.value.map(t => t.chain).filter(Boolean))];
-      return unique.sort();
-    });
-
-    const sortedTokens = computed(() => {
-      let t = tokens.value;
-      // Chain filter
-      if (chainFilter.value !== 'all') {
-        t = t.filter(x => x.chain === chainFilter.value);
-      }
-      // Sort
-      t = [...t];
-      if (sortBy.value === 'score') t.sort((a,b) => b.score - a.score);
-      else if (sortBy.value === 'newest') t.sort((a,b) => (b.age_days||999) - (a.age_days||999));
-      else if (sortBy.value === 'volume') t.sort((a,b) => (b.volume||0) - (a.volume||0));
-      return t;
-    });
-
-    onMounted(fetchTokens);
-
-    return { tokens, loading, searchInput, sortBy, chainFilter, chains, sortOptions, detail, chartCanvas,
-             fetchTokens, trackToken, refreshAll, showDetail, closeDetail,
-             priceClass, scoreClass, scoreColor, recColor, formatPrice, formatNum, stats, sortedTokens, renderChart };
+    renderCards();
+    updateRefreshTime();
+  } catch(e) {
+    document.getElementById('tokenGrid').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Failed to load: ${e.message}</div></div>`;
+    document.getElementById('resultCount').textContent = 'Error loading';
+    showToast('Error loading tokens', 'error');
   }
-}).mount('#app');
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('btnRefresh');
+  btn.disabled = true;
+  btn.textContent = '⟳ Refreshing…';
+  showToast('Refreshing all tokens…', 'loading');
+  try {
+    const r = await fetch('/api/refresh-all', { method: 'POST' });
+    const data = await r.json();
+    showToast(`✓ ${data.refreshed} tokens refreshed${data.alerts ? ', ' + data.alerts + ' alerts' : ''}`, 'success');
+    await loadTokens();
+  } catch(e) {
+    showToast('✗ Refresh failed: ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '⟳ Refresh';
+}
+
+async function addToken() {
+  const contract = document.getElementById('inputContract').value.trim();
+  const symbol = document.getElementById('inputSymbol').value.trim().toUpperCase();
+  const chain = document.getElementById('inputChain').value;
+
+  if (!contract) { showToast('Enter contract address', 'error'); return; }
+
+  const btn = document.getElementById('btnTrack');
+  btn.disabled = true;
+  btn.textContent = 'Tracking…';
+
+  try {
+    let url = `/api/track/${encodeURIComponent(contract)}?chain=${chain}`;
+    if (symbol) url += `&symbol=${encodeURIComponent(symbol)}`;
+
+    const r = await fetch(url, { method: 'POST' });
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.detail || 'Track failed');
+    }
+    showToast(`✓ ${symbol || contract.slice(0,10)} tracked`, 'success');
+    closeModal();
+    await loadTokens();
+  } catch(e) {
+    showToast('✗ ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '＋ Add Token';
+}
+
+async function removeToken(contract) {
+  if (!confirm('Remove this token?')) return;
+  try {
+    const r = await fetch(`/api/tokens/${encodeURIComponent(contract)}`, { method: 'DELETE' });
+    if (!r.ok) throw new Error('Remove failed');
+    showToast('✓ Token removed', 'success');
+    await loadTokens();
+  } catch(e) {
+    showToast('✗ ' + e.message, 'error');
+  }
+}
+
+// ── UI ─────────────────────────────────────────────────────────────────────────
+function updateStats() {
+  const tracked = tokens.length;
+  const strongBuy = tokens.filter(t => t.score >= 70).length;
+  const monitor = tokens.filter(t => t.score >= 50 && t.score < 70).length;
+  const avoid = tokens.filter(t => t.score < 50).length;
+  const caution = tokens.filter(t => t.caution).length;
+
+  document.getElementById('countTracked').textContent = tracked;
+  document.getElementById('countStrongBuy').textContent = strongBuy;
+  document.getElementById('countMonitor').textContent = monitor;
+  document.getElementById('countAvoid').textContent = avoid;
+  document.getElementById('countCaution').textContent = caution;
+}
+
+function updateRefreshTime() {
+  document.getElementById('lastRefresh').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+}
+
+function getSorted() {
+  let list = [...tokens];
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  if (q) list = list.filter(t =>
+    t.symbol.toLowerCase().includes(q) || t.contract.toLowerCase().includes(q)
+  );
+  if (chainFilter !== 'all') list = list.filter(t => t.chain === chainFilter);
+
+  if (sortMode === 'score') list.sort((a, b) => b.score - a.score);
+  else if (sortMode === 'newest') list.sort((a, b) => b.addedAt - a.addedAt);
+  else if (sortMode === 'volume') list.sort((a, b) => (b.volume24h || 0) - (a.volume24h || 0));
+
+  return list;
+}
+
+function renderCards() {
+  const list = getSorted();
+  const grid = document.getElementById('tokenGrid');
+  document.getElementById('resultCount').textContent =
+    `${list.length} token${list.length !== 1 ? 's' : ''} shown`;
+
+  if (!list.length) {
+    grid.innerHTML =
+      '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No tokens match your filter.</div></div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(t => {
+    const changeUp = t.change24h >= 0;
+
+    const tagsHtml = (t.tags || []).map(tag =>
+      `<span class="tag ${tagClass(tag)}">${tag}</span>`
+    ).join('');
+
+    const cautionHtml = t.caution
+      ? `<div class="caution-row"><span class="caution-icon">⚠️</span><span class="caution-text">${t.caution}</span></div>`
+      : '';
+
+    return `
+    <div class="token-card ${cardClass(t.score)}" id="card-${t.id}">
+
+      <!-- TOP -->
+      <div class="card-top">
+        <div class="token-identity">
+          <div class="token-avatar">${initials(t.symbol)}</div>
+          <div class="token-name-wrap">
+            <div class="token-name">${t.symbol}</div>
+            <div class="token-chain">⛓ ${(t.chain || '?').toUpperCase()} · ${t.age}</div>
+          </div>
+        </div>
+        <div class="token-right">
+          <div class="price-main">$${fmtPrice(t.price)}</div>
+          <div class="price-change ${changeUp ? 'up' : 'down'}">
+            ${changeUp ? '▲' : '▼'} ${Math.abs(t.change24h || 0).toFixed(2)}%
+          </div>
+          <div class="score-badge ${scoreColor(t.score)}" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;font-size:13px;font-weight:700;font-family:var(--mono);margin-top:6px;">
+            ${t.score}
+          </div>
+        </div>
+      </div>
+
+      <!-- TAGS -->
+      ${tagsHtml ? `<div class="tags">${tagsHtml}</div>` : ''}
+
+      <!-- STATS GRID -->
+      <div class="stats-grid">
+        <div class="stat-cell">
+          <div class="stat-cell-label">Liquidity</div>
+          <div class="stat-cell-val">${fmt(t.liquidity)}</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Market Cap</div>
+          <div class="stat-cell-val">${fmt(t.mcap)}</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">24h Volume</div>
+          <div class="stat-cell-val orange">${fmt(t.volume24h)}</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Holders</div>
+          <div class="stat-cell-val">${t.holders ? fmtNum(t.holders) : '—'}</div>
+        </div>
+      </div>
+
+      <!-- SUPPLY -->
+      <div class="supply-row">
+        <div class="supply-item">
+          <span class="supply-item-label">Circ</span>
+          <span class="supply-item-val">${t.circSupply}</span>
+        </div>
+        <div class="supply-item">
+          <span class="supply-item-label">Total</span>
+          <span class="supply-item-val">${t.totalSupply}</span>
+        </div>
+        <div class="supply-item">
+          <span class="supply-item-label">24h Txns</span>
+          <span class="supply-item-val">${t.transactions24h ? fmtNum(t.transactions24h) : '—'}</span>
+        </div>
+        <div class="supply-item">
+          <span class="supply-item-label">FDV</span>
+          <span class="supply-item-val">${fmt(t.fdv)}</span>
+        </div>
+      </div>
+
+      ${cautionHtml}
+
+      <!-- BOTTOM -->
+      <div class="card-bottom">
+        <span class="action-badge ${actionClass(t.action)}">
+          ${t.action && t.action.includes('Strong Buy') ? '✅' : t.action && t.action.includes('Watch') ? '🚀' : '🚫'} ${t.action || 'Unknown'}
+        </span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="expand-btn" onclick="toggleExpand('${t.id}', this)">Details ▾</button>
+          <button class="expand-btn" style="color:var(--red)" onclick="removeToken('${t.contract}')">✕</button>
+        </div>
+      </div>
+
+      <!-- EXPANDED -->
+      <div class="expanded-section" id="expand-${t.id}">
+        <div class="expanded-grid">
+          <div>
+            <div class="exp-item-label">Age</div>
+            <div class="exp-item-val">${t.age}</div>
+          </div>
+          <div>
+            <div class="exp-item-label">Score</div>
+            <div class="exp-item-val">${t.score}/100</div>
+          </div>
+          <div>
+            <div class="exp-item-label">Markets</div>
+            <div class="exp-item-val">${t.markets || '—'}</div>
+          </div>
+          <div>
+            <div class="exp-item-label">Buy/Sell</div>
+            <div class="exp-item-val">${t.buy_sell_ratio ? t.buy_sell_ratio.toFixed(2) + 'x' : '—'}</div>
+          </div>
+          <div>
+            <div class="exp-item-label">Vol/MC</div>
+            <div class="exp-item-val">${t.vol_mc_ratio ? (t.vol_mc_ratio * 100).toFixed(1) + '%' : '—'}</div>
+          </div>
+          <div>
+            <div class="exp-item-label">Float %</div>
+            <div class="exp-item-val">${t.float_pct != null ? t.float_pct + '%' : '—'}</div>
+          </div>
+        </div>
+        <div class="contract-row">
+          <span class="contract-label">Contract</span>
+          <span class="contract-addr">${t.contract}</span>
+          <button class="copy-btn" onclick="copyContract('${t.contract}')">📋</button>
+        </div>
+      </div>
+
+    </div>`;
+  }).join('');
+
+  updateStats();
+}
+
+function toggleExpand(id, btn) {
+  const el = document.getElementById('expand-' + id);
+  if (!el) return;
+  el.classList.toggle('open');
+  btn.textContent = el.classList.contains('open') ? 'Details ▴' : 'Details ▾';
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function setSort(mode, el) {
+  sortMode = mode;
+  document.querySelectorAll('.filter-row:first-of-type .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCards();
+}
+
+function setChain(chain, el) {
+  chainFilter = chain;
+  document.querySelectorAll('.filter-row:last-of-type .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderCards();
+}
+
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('inputContract').value = '';
+  document.getElementById('inputSymbol').value = '';
+  document.getElementById('inputChain').value = 'base';
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modal')) closeModal();
+}
+
+function copyContract(addr) {
+  navigator.clipboard.writeText(addr).then(
+    () => showToast('📋 Address copied', 'success'),
+    () => showToast('📋 Copy manually: ' + addr, 'error')
+  );
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadTokens();
+updateRefreshTime();
 </script>
 </body>
 </html>

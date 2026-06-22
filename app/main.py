@@ -241,6 +241,16 @@ async def refresh_all():
     }
 
 
+@app.delete("/api/tokens/{contract}")
+async def delete_token(contract: str):
+    """Remove a tracked token."""
+    token = db.get_token(contract)
+    if not token:
+        raise HTTPException(404, "Token not found")
+    db.remove_token(contract)
+    return {"status": "removed", "contract": contract}
+
+
 @app.patch("/api/correct/{contract}")
 async def correct_token(contract: str, corrections: dict):
     """Store manual corrections for a token (age, float, listing, etc)."""
