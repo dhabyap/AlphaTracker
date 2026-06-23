@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaTracker — Whale Detail</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #080810;
+    --s1: #0e0e1a;
+    --s2: #13131f;
+    --s3: #19192a;
+    --border: #1f1f32;
+    --border2: #272740;
+    --orange: #f7931a;
+    --orange-dim: rgba(247,147,26,0.1);
+    --green: #00d26a;
+    --green-dim: rgba(0,210,106,0.09);
+    --red: #ff3b5c;
+    --red-dim: rgba(255,59,92,0.09);
+    --blue: #4f8ef7;
+    --blue-dim: rgba(79,142,247,0.09);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167,139,250,0.09);
+    --yellow: #ffd60a;
+    --cyan: #22d3ee;
+    --text: #e8e8f2;
+    --text2: #8888aa;
+    --text3: #4a4a6a;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+  .topbar {
+    height: 52px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    background: rgba(8,8,16,0.92); backdrop-filter: blur(14px);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .btn-back {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600;
+    color: var(--text2); background: var(--s2);
+    border: 1px solid var(--border2); border-radius: 8px;
+    padding: 5px 12px; cursor: pointer; text-decoration: none; transition: all 0.15s;
+  }
+  .btn-back:hover { color: var(--text); border-color: var(--text3); }
+  .logo { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo em { color: var(--orange); font-style: normal; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .btn-refresh {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: #000;
+    background: var(--purple); border: none; border-radius: 8px;
+    padding: 7px 14px; cursor: pointer; transition: opacity 0.15s;
+    font-family: var(--sans);
+  }
+  .btn-refresh:hover { opacity: 0.85; }
+  .btn-refresh:disabled { opacity: 0.5; cursor: wait; }
+
+  .hero { padding: 28px 24px 0; max-width: 1320px; margin: 0 auto; }
+  .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .whale-identity { display: flex; align-items: center; gap: 16px; }
+  .whale-avatar {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; flex-shrink: 0; box-shadow: 0 0 24px rgba(167,139,250,0.3);
+  }
+  .whale-type {
+    font-size: 11px; font-weight: 700; color: var(--purple);
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .whale-type-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple); box-shadow: 0 0 8px var(--purple); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .whale-name { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1; }
+  .whale-addr { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .copy-addr { background: transparent; border: none; color: var(--text3); cursor: pointer; font-size: 11px; padding: 0; transition: color 0.15s; }
+  .copy-addr:hover { color: var(--orange); }
+  .hero-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+  .badge {
+    font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: 0.06em; display: flex; align-items: center; gap: 4px;
+  }
+  .badge-purple { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167,139,250,0.25); }
+  .badge-green  { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(0,210,106,0.25); }
+  .badge-orange { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(247,147,26,0.25); }
+  .badge-blue   { background: var(--blue-dim);   color: var(--blue);   border: 1px solid rgba(79,142,247,0.25); }
+  .badge-red    { background: var(--red-dim);     color: var(--red);    border: 1px solid rgba(255,59,92,0.25); }
+
+  .stat-strip {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+    max-width:1320px; margin: 0 auto; padding: 0 24px 16px;
+  }
+  .scard {
+    background: var(--s1); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; position: relative; overflow: hidden;
+  }
+  .scard::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  }
+  .scard.c-white::after  { background: linear-gradient(90deg, #fff0,var(--text),#fff0); opacity: 0.15; }
+  .scard.c-green::after  { background: var(--green); opacity: 0.6; }
+  .scard.c-red::after    { background: var(--red);   opacity: 0.6; }
+  .scard.c-orange::after { background: var(--orange); opacity: 0.8; }
+  .scard.c-purple::after { background: var(--purple); opacity: 0.6; }
+  .scard.c-blue::after   { background: var(--blue);   opacity: 0.6; }
+  .scard-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+  .scard-val { font-size: 22px; font-weight: 700; font-family: var(--mono); line-height: 1; }
+  .scard.c-white .scard-val  { color: var(--text); }
+  .scard.c-green .scard-val  { color: var(--green); }
+  .scard.c-red .scard-val    { color: var(--red); }
+  .scard.c-orange .scard-val { color: var(--orange); }
+  .scard.c-purple .scard-val { color: var(--purple); }
+  .scard.c-blue .scard-val   { color: var(--blue); }
+  .scard-sub { font-size: 10px; color: var(--text3); margin-top: 4px; font-family: var(--mono); }
+  .winrate-bar { margin-top: 6px; height: 4px; background: var(--border); border-radius: 2px; position: relative; overflow: hidden; }
+  .winrate-fill { height: 100%; background: linear-gradient(90deg, var(--green), #00ff88); border-radius: 2px; transition: width 1s ease; }
+
+  .content-split { display: grid; grid-template-columns: 1fr 380px; gap: 16px; max-width: 1320px; margin: 0 auto; padding: 0 24px 24px; }
+
+  .panel { background: var(--s1); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .panel-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text2); display: flex; align-items: center; gap: 8px; }
+  .panel-controls { display: flex; gap: 6px; }
+  .filter-pill {
+    font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border2); background: transparent; color: var(--text3);
+    cursor: pointer; font-family: var(--sans); transition: all 0.15s;
+  }
+  .filter-pill:hover { color: var(--text); border-color: var(--text3); }
+  .filter-pill.active { background: var(--orange); border-color: var(--orange); color: #000; }
+
+  .tx-list { max-height: 560px; overflow-y: auto; }
+  .tx-list::-webkit-scrollbar { width: 4px; }
+  .tx-list::-webkit-scrollbar-track { background: transparent; }
+  .tx-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .tx-item {
+    display: grid; grid-template-columns: 32px 1fr auto;
+    align-items: center; gap: 12px; padding: 12px 18px;
+    border-bottom: 1px solid var(--border); transition: background 0.12s; cursor: pointer;
+  }
+  .tx-item:hover { background: var(--s2); }
+  .tx-item:last-child { border-bottom: none; }
+
+  .tx-type-dot {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+  }
+  .dot-buy  { background: var(--green-dim); border: 1px solid rgba(0,210,106,0.25); }
+  .dot-sell { background: var(--red-dim);   border: 1px solid rgba(255,59,92,0.25); }
+
+  .tx-body {}
+  .tx-action { font-size: 13px; font-weight: 600; line-height: 1.2; display: flex; align-items: center; gap: 6px; }
+  .tx-action .buy  { color: var(--green); }
+  .tx-action .sell { color: var(--red); }
+  .tx-token { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--text); }
+  .tx-meta { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-top: 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tx-meta-sep { color: var(--border2); }
+
+  .tx-right { text-align: right; flex-shrink: 0; }
+  .tx-time { font-size: 11px; color: var(--text3); font-family: var(--mono); margin-bottom: 4px; }
+  .tx-usd { font-size: 13px; font-weight: 600; font-family: var(--mono); }
+  .tx-usd.buy { color: var(--green); }
+  .tx-usd.sell { color: var(--red); }
+  .tx-link { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: var(--blue); text-decoration: none; font-family: var(--mono); margin-top: 2px; transition: opacity 0.15s; }
+  .tx-link:hover { opacity: 0.7; }
+
+  .right-col { display: flex; flex-direction: column; gap: 14px; }
+
+  .ai-panel {
+    background: linear-gradient(135deg, #0e0e22 0%, #130f2a 50%, #0a1520 100%);
+    border: 1px solid rgba(167,139,250,0.25); border-radius: 14px; overflow: hidden; position: relative;
+  }
+  .ai-panel::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at top left, rgba(167,139,250,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .ai-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid rgba(167,139,250,0.15); }
+  .ai-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--purple); }
+  .ai-confidence { font-size: 11px; font-family: var(--mono); color: var(--green); font-weight: 700; background: var(--green-dim); border: 1px solid rgba(0,210,106,0.2); padding: 3px 8px; border-radius: 6px; }
+  .ai-tags { padding: 12px 18px 0; display: flex; gap: 6px; flex-wrap: wrap; }
+  .ai-body { padding: 12px 18px; font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .ai-suggestion { margin: 0 18px 14px; padding: 12px 14px; background: rgba(0,210,106,0.06); border: 1px solid rgba(0,210,106,0.18); border-radius: 10px; font-size: 12px; line-height: 1.5; }
+  .ai-suggestion-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--yellow); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+  .ai-suggestion p { color: var(--text2); }
+
+  .token-panel { background: var(--s1); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; flex: 1; }
+  .token-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 18px; border-bottom: 1px solid var(--border); font-size: 12px; transition: background 0.12s; cursor: default; }
+  .token-row:hover { background: var(--s2); }
+  .token-row:last-child { border-bottom: none; }
+  .token-row-left { display: flex; align-items: center; gap: 10px; }
+  .token-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--s3); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; font-family: var(--mono); color: var(--orange); }
+  .token-row-name { font-weight: 600; }
+  .token-row-sub { font-size: 10px; color: var(--text3); font-family: var(--mono); margin-top: 1px; }
+  .token-row-right { text-align: right; }
+  .token-row-val { font-family: var(--mono); font-weight: 600; font-size: 12px; }
+  .token-row-pct { font-size: 10px; font-family: var(--mono); padding: 1px 5px; border-radius: 4px; margin-top: 2px; display: inline-block; }
+  .pct-win { background: var(--green-dim); color: var(--green); }
+  .pct-loss { background: var(--red-dim); color: var(--red); }
+
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--s2); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 16px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 7px; z-index: 999; transform: translateY(60px); opacity: 0; transition: all 0.22s; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.ok { border-color: var(--green); color: var(--green); }
+
+  @media (max-width: 1000px) {
+    .content-split { grid-template-columns: 1fr; }
+    .stat-strip { grid-template-columns: repeat(3, 1fr); }
+    .right-col { flex-direction: row; flex-wrap: wrap; }
+    .ai-panel, .token-panel { flex: 1 1 300px; }
+  }
+  @media (max-width: 640px) {
+    .stat-strip { grid-template-columns: repeat(2, 1fr); }
+    .hero { padding: 16px 16px 0; }
+    .content-split { padding: 0 16px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <div class="topbar-left">
+    <a class="btn-back" href="/">← Dashboard</a>
+    <div class="logo"><em>Alpha</em>Tracker</div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-refresh" id="refreshBtn" onclick="refreshData()">⟳ Refresh</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-top">
+    <div class="whale-identity">
+      <div class="whale-avatar">🐋</div>
+      <div class="whale-name-block">
+        <div class="whale-type">
+          <span class="whale-type-dot"></span>
+          <span id="whaleTypeLabel">Whale</span>
+        </div>
+        <div class="whale-name" id="whaleName">Whale</div>
+        <div class="whale-addr">
+          <span id="whaleAddress">0x...</span>
+          <button class="copy-addr" id="copyBtn" onclick="copyAddr()">📋</button>
+        </div>
+        <div class="hero-badges" id="heroBadges"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STAT STRIP -->
+<div class="stat-strip" id="statStrip">
+  <div class="scard c-white"><div class="scard-label">📊 Total Transaksi</div><div class="scard-val" id="sTotal">—</div><div class="scard-sub">all-time</div></div>
+  <div class="scard c-green"><div class="scard-label">🟢 Beli</div><div class="scard-val" id="sBeli">—</div><div class="scard-sub" id="sBeliSub">0% dari total</div><div class="winrate-bar"><div class="winrate-fill" id="sBeliBar" style="width:0%"></div></div></div>
+  <div class="scard c-red"><div class="scard-label">🔴 Jual</div><div class="scard-val" id="sJual">—</div><div class="scard-sub" id="sJualSub">0% dari total</div></div>
+  <div class="scard c-orange"><div class="scard-label">💵 Volume Total</div><div class="scard-val" id="sVolume">—</div><div class="scard-sub">seluruh transaksi</div></div>
+  <div class="scard c-purple"><div class="scard-label">🏆 Top Token</div><div class="scard-val" id="sTopToken" style="font-size:18px">—</div><div class="scard-sub" id="sTopTokenSub">most traded</div></div>
+  <div class="scard c-blue"><div class="scard-label">🪙 Token Unik</div><div class="scard-val" id="sTokenUnik">—</div><div class="scard-sub">distinct assets</div></div>
+</div>
+
+<!-- CONTENT SPLIT -->
+<div class="content-split" style="display:flex;flex-direction:column;gap:12px">
+
+  <!-- LEFT + RIGHT FLEX -->
+  <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📋 Riwayat Transaksi</div>
+        <div class="panel-controls">
+          <button class="filter-pill active" onclick="filterTx('all',this)">Semua</button>
+          <button class="filter-pill" onclick="filterTx('buy',this)">Beli</button>
+          <button class="filter-pill" onclick="filterTx('sell',this)">Jual</button>
+        </div>
+      </div>
+      <div class="tx-list" id="txList" style="min-height:200px"><div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Memuat transaksi...</div></div>
+    </div>
+
+    <div class="right-col">
+      <div class="ai-panel">
+        <div class="ai-header" id="aiHeader">
+          <div class="ai-title">🧠 AI Analysis</div>
+          <div class="ai-confidence" id="aiConfidence" style="display:none">—</div>
+        </div>
+        <div class="ai-tags" id="aiTags"></div>
+        <div class="ai-body" id="aiBody" style="text-align:center;color:var(--text3);padding:20px;font-size:12px">🧠 Menganalisis...</div>
+        <div class="ai-suggestion" id="aiSuggestion" style="display:none"><div class="ai-suggestion-label">💡 Saran</div><p id="aiSuggestionText"></p></div>
+      </div>
+
+      <div class="token-panel">
+        <div class="panel-header">
+          <div class="panel-title">🪙 Token Breakdown</div>
+          <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">by volume</span>
+        </div>
+        <div id="tokenBreakdown"><div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Memuat...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const WALLET = "{{WALLET}}";
+let txData = [];
+let txFilter = 'all';
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function fmtUsd(v) {
+  if (!v || v === 0) return '$0';
+  if (v >= 1e9) return '$' + (v/1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return '$' + (v/1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return '$' + (v/1e3).toFixed(1) + 'K';
+  if (v >= 1) return '$' + v.toFixed(2);
+  return '≈ $' + v.toFixed(4);
+}
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const sec = Math.floor(Date.now()/1000 - ts);
+  if (sec < 60) return 'baru saja';
+  if (sec < 3600) return Math.floor(sec/60) + 'm lalu';
+  if (sec < 86400) return Math.floor(sec/3600) + 'j lalu';
+  if (sec < 2592000) return Math.floor(sec/86400) + 'h lalu';
+  return new Date(ts*1000).toLocaleDateString('id-ID', {day:'numeric',month:'short'});
+}
+function fmtAmt(amt) {
+  if (!amt) return '—';
+  if (amt >= 1e6) return (amt/1e6).toFixed(1) + 'M';
+  if (amt >= 1e3) return (amt/1e3).toFixed(1) + 'K';
+  if (amt > 1) return Number(amt).toFixed(2);
+  return Number(amt).toExponential(2);
+}
+
+// ── LOAD ALL ──────────────────────────────────────────────────────────────────
+async function loadAll() {
+  const [tradesRes, aiRes] = await Promise.all([
+    fetch(`/api/whales/${WALLET}/trades?limit=200`),
+    fetch(`/api/whales/${WALLET}/ai-analysis`)
+  ]);
+  const tradesData = await tradesRes.json();
+  const aiData = await aiRes.json();
+  txData = tradesData.trades || [];
+  renderStats();
+  renderTx();
+  renderAi(aiData);
+  renderTokenBreakdown();
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const total = txData.length;
+  let buys = 0, sells = 0, totalVal = 0;
+  const tokens = {};
+  txData.forEach(t => {
+    if (t.trade_type === 'buy') buys++;
+    else if (t.trade_type === 'sell') sells++;
+    if (t.value_usd) totalVal += t.value_usd;
+    const sym = t.token_symbol || '?';
+    tokens[sym] = (tokens[sym] || 0) + (t.value_usd || 0);
+  });
+  const buyPct = total > 0 ? ((buys / total) * 100).toFixed(1) : 0;
+  const sellPct = total > 0 ? ((sells / total) * 100).toFixed(1) : 0;
+  const topToken = Object.entries(tokens).sort((a,b) => b[1]-a[1])[0];
+  const uniqueTokens = Object.keys(tokens).length;
+
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sBeli').textContent = buys;
+  document.getElementById('sBeliSub').textContent = buyPct + '% dari total';
+  document.getElementById('sBeliBar').style.width = buyPct + '%';
+  document.getElementById('sJual').textContent = sells;
+  document.getElementById('sJualSub').textContent = sellPct + '% dari total';
+  document.getElementById('sVolume').textContent = fmtUsd(totalVal);
+  document.getElementById('sTopToken').textContent = topToken ? '$' + topToken[0] : '—';
+  document.getElementById('sTopTokenSub').textContent = topToken ? 'vol ' + fmtUsd(topToken[1]) : '—';
+  document.getElementById('sTokenUnik').textContent = uniqueTokens;
+}
+
+// ── TX ────────────────────────────────────────────────────────────────────────
+function renderTx() {
+  const list = txFilter === 'all' ? txData : txData.filter(t => t.trade_type === txFilter);
+  const el = document.getElementById('txList');
+  if (!txData.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Belum ada transaksi</div>';
+    return;
+  }
+  el.innerHTML = list.map(tx => {
+    const isBuy = tx.trade_type === 'buy';
+    const sym = tx.token_symbol || '?';
+    const usdFmt = fmtUsd(tx.value_usd);
+    const ago = timeAgo(tx.trade_at);
+    const amt = fmtAmt(tx.amount);
+    const explorer = tx.tx_hash ? `https://etherscan.io/tx/${tx.tx_hash}` : '';
+    return `<div class="tx-item">
+      <div class="tx-type-dot ${isBuy ? 'dot-buy' : 'dot-sell'}">${isBuy ? '▲' : '▼'}</div>
+      <div class="tx-body">
+        <div class="tx-action"><span class="${isBuy ? 'buy' : 'sell'}">${isBuy ? 'Beli' : 'Jual'}</span><span class="tx-token">$${sym}</span></div>
+        <div class="tx-meta"><span>${amt} token</span><span class="tx-meta-sep">•</span><span>${usdFmt}</span></div>
+      </div>
+      <div class="tx-right">
+        <div class="tx-time">${ago}</div>
+        <div class="tx-usd ${isBuy ? 'buy' : 'sell'}">${usdFmt}</div>
+        ${explorer ? `<a href="${explorer}" target="_blank" class="tx-link">🔗 Tx</a>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Tidak ada transaksi ${txFilter === "buy" ? "beli" : "jual"}</div>';
+  }
+}
+
+function filterTx(mode, el) {
+  txFilter = mode;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderTx();
+}
+
+// ── AI ────────────────────────────────────────────────────────────────────────
+function renderAi(data) {
+  if (data.status !== 'ok' || !data.analysis) {
+    document.getElementById('aiBody').textContent = 'Data AI tidak tersedia';
+    return;
+  }
+  const a = data.analysis;
+  const s = data.stats || {};
+  const confColor = a.confidence >= 70 ? 'var(--green)' : a.confidence >= 40 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('aiConfidence').style.display = 'inline-block';
+  document.getElementById('aiConfidence').textContent = 'Confidence ' + a.confidence + '%';
+  document.getElementById('aiConfidence').style.color = confColor;
+  document.getElementById('aiConfidence').style.borderColor = confColor;
+
+  const moodEmoji = a.recent_mood === 'bullish' ? '🐂' : a.recent_mood === 'bearish' ? '🐻' : '➡️';
+  const moodBadge = a.recent_mood === 'bullish' ? 'badge-green' : 'badge-blue';
+  const wr = (s.win_rate || 0) * 100;
+  document.getElementById('aiTags').innerHTML = `
+    <span class="badge badge-green">🧠 ${a.whale_type === 'smart_money' ? 'Smart Money' : a.whale_type === 'dump_seller' ? 'Dump Seller' : a.whale_type === 'accumulative' ? 'Accumulator' : 'Random'}</span>
+    <span class="badge ${moodBadge}">${moodEmoji} ${a.recent_mood}</span>
+    <span class="badge badge-blue">✅ Win Rate ${wr}%</span>
+    <span class="badge badge-orange">💰 Profit $${(s.total_pnl || 0).toFixed(0)}</span>
+    ${a.top_token ? '<span class="badge badge-blue">🎯 $' + a.top_token + '</span>' : ''}
+  `;
+  document.getElementById('aiBody').innerHTML = a.assessment;
+
+  if (a.suggestion) {
+    document.getElementById('aiSuggestion').style.display = 'block';
+    document.getElementById('aiSuggestionText').textContent = a.suggestion;
+  }
+
+  // Hero badges + type
+  document.getElementById('whaleTypeLabel').textContent = a.whale_type === 'smart_money' ? 'Smart Money Trader' : a.whale_type === 'dump_seller' ? 'Dump Seller' : a.whale_type === 'accumulative' ? 'Accumulator' : 'Whale Tracker';
+  document.getElementById('heroBadges').innerHTML = `
+    <span class="badge badge-green">🧠 ${a.whale_type === 'smart_money' ? 'Smart Money' : a.whale_type === 'dump_seller' ? 'Dump Seller' : 'Normal'}</span>
+    <span class="badge ${moodBadge}">${moodEmoji} ${a.recent_mood}</span>
+    <span class="badge badge-green">✅ Win Rate ${wr}%</span>
+    <span class="badge badge-orange">💰 Profit $${(s.total_pnl || 0).toFixed(0)}</span>
+    ${a.top_token ? '<span class="badge badge-blue">🎯 $' + a.top_token + '</span>' : ''}
+  `;
+}
+
+// ── TOKEN BREAKDOWN ────────────────────────────────────────────────────────────
+function renderTokenBreakdown() {
+  const groups = {};
+  txData.forEach(t => {
+    const sym = t.token_symbol || '?';
+    if (!groups[sym]) groups[sym] = { volume: 0, count: 0 };
+    groups[sym].volume += t.value_usd || 0;
+    groups[sym].count++;
+  });
+  const sorted = Object.entries(groups).sort((a,b) => b[1].volume - a[1].volume).slice(0, 10);
+  if (!sorted.length) {
+    document.getElementById('tokenBreakdown').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Belum ada data</div>';
+    return;
+  }
+  document.getElementById('tokenBreakdown').innerHTML = sorted.map(([sym, g]) => {
+    const win = txData.filter(t => (t.token_symbol || '?') === sym && t.trade_type === 'sell' && t.value_usd).reduce((s,t) => s + (t.value_usd||0), 0) >=
+               txData.filter(t => (t.token_symbol || '?') === sym && t.trade_type === 'buy' && t.value_usd).reduce((s,t) => s + (t.value_usd||0), 0);
+    return `<div class="token-row">
+      <div class="token-row-left">
+        <div class="token-icon">${sym.slice(0,2)}</div>
+        <div>
+          <div class="token-row-name">$${sym}</div>
+          <div class="token-row-sub">${g.count} transaksi</div>
+        </div>
+      </div>
+      <div class="token-row-right">
+        <div class="token-row-val">${fmtUsd(g.volume)}</div>
+        <span class="token-row-pct ${win ? 'pct-win' : 'pct-loss'}">${win ? '+Bullish' : 'Bearish'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ACTIONS ────────────────────────────────────────────────────────────────────
+function copyAddr() {
+  const addr = document.getElementById('whaleAddress').textContent;
+  navigator.clipboard.writeText(addr).then(() => {
+    showToast('📋 Address copied');
+    document.getElementById('copyBtn').textContent = '✓';
+    setTimeout(() => document.getElementById('copyBtn').textContent = '📋', 2000);
+  });
+}
+
+async function refreshData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true; btn.textContent = '⟳ Loading...';
+  showToast('⟳ Refreshing data...');
+  try {
+    await fetch(`/api/whales/${WALLET}/crawl`, { method: 'POST' });
+    await fetch(`/api/whales/${WALLET}/fill-prices`, { method: 'POST' });
+    await loadAll();
+    showToast('✅ Data refreshed');
+  } catch(e) { showToast('❌ Refresh failed'); }
+  btn.disabled = false; btn.textContent = '⟳ Refresh';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ok show';
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('whaleName').textContent = "{{LABEL}}";
+document.getElementById('whaleAddress').textContent = WALLET;
+loadAll();
+</script>
+</body>
+</html>

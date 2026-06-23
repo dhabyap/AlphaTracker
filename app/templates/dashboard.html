@@ -160,6 +160,126 @@
     font-family: var(--mono);
   }
 
+  /* Header */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--orange); }
+  .logo-icon { font-size: 20px; }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  /* Alert bell */
+  .alert-bell {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+  }
+  .alert-bell:hover { border-color: var(--orange); }
+  .alert-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: var(--red);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+  }
+
+  .alert-panel {
+    display: none;
+    position: fixed;
+    top: 56px; right: 24px;
+    width: 360px;
+    max-height: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 200;
+    overflow: hidden;
+  }
+  .alert-panel.open { display: block; }
+
+  .alert-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .alert-close {
+    background: transparent;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .alert-close:hover { color: var(--red); }
+
+  .alert-list {
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .alert-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .alert-item.pump { border-left: 3px solid var(--green); }
+  .alert-item.dump { border-left: 3px solid var(--red); }
+  .alert-item.score_drop { border-left: 3px solid var(--yellow); }
+  .alert-item.new_token { border-left: 3px solid var(--blue); }
+  .alert-item .alert-time {
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
   .last-refresh {
     font-size: 11px;
     font-family: var(--mono);
@@ -183,6 +303,21 @@
   }
   .btn-refresh:hover { background: rgba(247,147,26,0.2); }
   .btn-refresh:disabled { opacity: 0.4; cursor: wait; }
+
+  .btn-small {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-small:hover { background: var(--border); color: var(--text); }
+  .btn-small:disabled { opacity: 0.4; cursor: wait; }
 
   /* ── MAIN ── */
   .main {
@@ -1215,6 +1350,9 @@
     <button class="alert-bell" onclick="toggleAlertPanel()" title="Alerts">
       🔔 <span id="alertCount" class="alert-badge" style="display:none">0</span>
     </button>
+    <button class="alert-bell" onclick="toggleSmartMoney()" title="Smart Money" style="margin-right:8px;">
+      🐋
+    </button>
     <span class="last-refresh" id="lastRefresh">Updated: —</span>
     <button class="btn-refresh" id="btnRefresh" onclick="refreshAll()">⟳ Refresh</button>
   </div>
@@ -1228,6 +1366,22 @@
   </div>
   <div id="alertList" class="alert-list">
     <div class="empty-text">No alerts yet</div>
+  </div>
+</div>
+
+<!-- SMART MONEY PANEL -->
+<div class="alert-panel" id="smartMoneyPanel">
+  <div class="alert-panel-header">
+    <span>🐋 Smart Money (Whales)</span>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span id="whaleStatus" style="font-size:11px;color:var(--text3);font-weight:400"></span>
+      <button class="btn-small" onclick="discoverWhales()" style="padding:3px 8px;font-size:11px">🔍 Cari</button>
+      <button class="btn-small" onclick="crawlAllWhales()" style="padding:3px 8px;font-size:11px">⟳ Crawl</button>
+      <button class="alert-close" onclick="toggleSmartMoney()">✕</button>
+    </div>
+  </div>
+  <div id="smartMoneyList" class="alert-list">
+    <div class="empty-text">No whales tracked</div>
   </div>
 </div>
 
@@ -1671,7 +1825,7 @@ function renderCards() {
       : '';
 
     return `
-    <div class="token-card ${cardClass(t.score)}" id="card-${t.id}" onclick="openAIModal('${t.contract}','${t.symbol}')">
+    <div class="token-card ${cardClass(t.score)}" id="card-${t.id}" onclick="window.open('/token/${t.contract}','_blank')">
 
       <!-- TOP -->
       <div class="card-top">
@@ -1829,13 +1983,25 @@ function toggleExpand(id, btn, e) {
 }
 
 // ── AI MODAL ───────────────────────────────────────────────────────────────────
+window.aiCache = {};  // contract -> { data, timestamp }
+
 function openAIModal(contract, symbol) {
   const modal = document.getElementById('aiModal');
   modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  const cached = window.aiCache[contract];
+  if (cached) {
+    // Show cached version instantly, no loading
+    document.getElementById('aiLoading').style.display = 'none';
+    document.getElementById('aiContent').style.display = 'block';
+    document.getElementById('aiContent').innerHTML = renderAIContent(cached.data, symbol || '');
+    return;
+  }
+
   document.getElementById('aiLoading').style.display = 'flex';
   document.getElementById('aiContent').style.display = 'none';
   document.getElementById('aiContent').innerHTML = '';
-  document.body.style.overflow = 'hidden';
   fetchAIAnalysis(contract, symbol);
 }
 
@@ -1906,17 +2072,25 @@ function signalIcon(type) {
 
 async function fetchAIAnalysis(contract, symbol, force) {
   const aiContent = document.getElementById('aiContent');
+  const aiLoading = document.getElementById('aiLoading');
+
+  // Force refresh — clear cache for this contract
+  if (force) delete window.aiCache[contract];
+
   const forceParam = force ? '&force=1' : '';
   try {
     const r = await fetch(`/api/ai-advisor?contract=${encodeURIComponent(contract)}${forceParam}`);
     if (!r.ok) throw new Error('API returned ' + r.status);
     const data = await r.json();
 
-    document.getElementById('aiLoading').style.display = 'none';
+    // Cache it
+    window.aiCache[contract] = { data, timestamp: Date.now() };
+
+    aiLoading.style.display = 'none';
     aiContent.style.display = 'block';
     aiContent.innerHTML = renderAIContent(data, symbol);
   } catch(e) {
-    document.getElementById('aiLoading').style.display = 'none';
+    aiLoading.style.display = 'none';
     aiContent.style.display = 'block';
     aiContent.innerHTML = `
       <div class="empty">
@@ -2190,11 +2364,297 @@ function loadSparklines() {
 
 function toggleAlertPanel() {
   document.getElementById('alertPanel').classList.toggle('open');
-  if (document.getElementById('alertPanel').classList.contains('open')) {
-    loadAlerts();
+  if (document.getElementById('alertPanel').classList.contains('open')) loadAlerts();
+}
+function toggleSmartMoney() {
+  document.getElementById('smartMoneyPanel').classList.toggle('open');
+  if (document.getElementById('smartMoneyPanel').classList.contains('open')) loadWhales();
+}
+
+// ── Helper: time ago ──────────────────────────────────────────────────────────
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const sec = Math.floor((Date.now()/1000 - ts));
+  if (sec < 60) return 'baru saja';
+  if (sec < 3600) return `${Math.floor(sec/60)}m lalu`;
+  if (sec < 86400) return `${Math.floor(sec/3600)}j lalu`;
+  return `${Math.floor(sec/86400)}h lalu`;
+}
+
+// ── WHALE PANEL ───────────────────────────────────────────────────────────────
+async function loadWhales() {
+  try {
+    const r = await fetch('/api/whales');
+    const data = await r.json();
+    const whales = data.whales || [];
+    const listEl = document.getElementById('smartMoneyList');
+    const statusEl = document.getElementById('whaleStatus');
+    if (!whales.length) {
+      listEl.innerHTML = '<div class="empty-text">Belum ada whale dipantau</div>';
+      statusEl.textContent = '';
+      return;
+    }
+    statusEl.textContent = `${whales.length} dompet`;
+    listEl.innerHTML = whales.map(w => {
+      const wr = (w.win_rate || 0);
+      const wrPct = (wr * 100).toFixed(0);
+      const wrEmoji = wr >= 0.6 ? '🟢' : wr >= 0.4 ? '🟡' : '🔴';
+      const wrLabel = wr >= 0.6 ? 'Bagus' : wr >= 0.4 ? 'Sedang' : 'Buruk';
+      const lastPnl = w.last_profit || 0;
+      const pnlStr = lastPnl !== 0 ? `${lastPnl > 0 ? '+' : ''}$${lastPnl.toFixed(0)}` : '—';
+      return `<div class="alert-item" style="cursor:pointer" onclick="window.open('/whale/${w.wallet_address}','_blank')">
+         <div style="display:flex;justify-content:space-between;align-items:center">
+           <span style="font-weight:700">🐋 ${w.label || 'Whale'}</span>
+           <span style="font-size:10px;color:var(--text3)">${w.last_crawled_at ? timeAgo(w.last_crawled_at) : 'baru'}</span>
+         </div>
+        <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+          <span style="background:var(--surface2);padding:2px 8px;border-radius:4px;font-size:10px">${wrEmoji} Akurasi ${wrPct}% (${wrLabel})</span>
+          <span style="background:var(--surface2);padding:2px 8px;border-radius:4px;font-size:10px">💰 ${pnlStr}</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">Klik untuk detail →</div>
+      </div>`;
+    }).join('');
+    // Fetch trades summary for each whale
+    whales.forEach(w => fetchWhaleSummary(w.wallet_address));
+  } catch(e) { console.error('Whales:', e); }
+}
+
+async function fetchWhaleSummary(wallet) {
+  try {
+    const r = await fetch(`/api/whales/${wallet}/trades?limit=3`);
+    const d = await r.json();
+    const trades = d.trades || [];
+    if (!trades.length) return;
+    const latest = trades[0];
+    const symbol = latest.token_symbol || '?';
+    const action = latest.trade_type === 'buy' ? 'Beli' : latest.trade_type === 'sell' ? 'Jual' : 'Transfer';
+    const items = document.querySelectorAll('#smartMoneyList .alert-item');
+    for (const el of items) {
+      if (el.textContent.includes(wallet.substring(0,10))) {
+        const div = el.querySelector('div:last-child');
+        if (div) div.textContent = `🔄 Terakhir: ${action} $${symbol} • ${timeAgo(latest.trade_at)}`;
+        break;
+      }
+    }
+  } catch(e) {}
+}
+
+// ── WHALE DISCOVERY ───────────────────────────────────────────────────────────
+async function discoverWhales() {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '🔍 Mencari...';
+  try {
+    const r = await fetch('/api/whales/discover?limit=10');
+    const d = await r.json();
+    if (!d.candidates || !d.candidates.length) {
+      showModal('🔍 Discovery', '<div style="text-align:center;padding:30px;color:var(--text3)">Belum nemu whale baru 🐋 coba lagi nanti</div>');
+      return;
+    }
+    let html = '<div style="font-size:12px;color:var(--text3);margin-bottom:10px">Ditemukan ' + d.count + ' kandidat whale baru dari scan BSC 30 block terakhir:</div>';
+    html += d.candidates.map(c => {
+      const val = c.total_value_eth >= 1000 ? (c.total_value_eth/1000).toFixed(1)+'K' : c.total_value_eth.toFixed(2);
+      const addrShort = c.wallet.slice(0,8)+'...'+c.wallet.slice(-4);
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:4px">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-weight:600;font-size:13px">' + addrShort + '</div>' +
+          '<div style="font-size:10px;color:var(--text3);font-family:monospace">' + c.tx_count + ' tx • ' + val + ' BNB</div>' +
+        '</div>' +
+        '<button class="btn-small" onclick="addDiscoveredWhale(\'' + c.wallet + '\')" style="flex-shrink:0;padding:3px 10px;font-size:10px;background:var(--mint);color:#000;border:none;border-radius:6px;cursor:pointer">+ Track</button>' +
+      '</div>';
+    }).join('');
+    showModal('🔍 Kandidat Whale Baru', html);
+  } catch(e) {
+    showModal('🔍 Discovery', '<div style="text-align:center;padding:30px;color:var(--red)">Gagal: ' + e.message + '</div>');
+  }
+  btn.disabled = false; btn.textContent = '🔍 Cari';
+}
+
+async function addDiscoveredWhale(wallet) {
+  try {
+    const r = await fetch('/api/whales', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({wallet, label: 'Discovered #'+wallet.slice(0,6)})
+    });
+    const d = await r.json();
+    if (d.status === 'added') {
+      showToast('✅ Whale ditambahkan!');
+      loadWhales();
+      closeModal();
+    } else {
+      showToast('❌ Gagal: ' + JSON.stringify(d));
+    }
+  } catch(e) {
+    showToast('❌ ' + e.message);
   }
 }
 
+
+// ── WHALE DETAIL MODAL ────────────────────────────────────────────────────────
+let _whaleDetailOpen = false;
+
+async function crawlAllWhales() {
+  const btn = document.querySelector('#smartMoneyPanel .btn-small');
+  const statusEl = document.getElementById('whaleStatus');
+  if (btn) btn.disabled = true;
+  if (statusEl) statusEl.textContent = 'Mencari...';
+  try {
+    const r = await fetch('/api/whales/crawl', { method: 'POST' });
+    const data = await r.json();
+    if (statusEl) statusEl.textContent = data.message || 'Crawl started';
+    setTimeout(loadWhales, 5000);
+  } catch(e) {
+    if (statusEl) statusEl.textContent = 'Gagal';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function showWhaleTrades(wallet, label) {
+  const existing = document.getElementById('whaleDetailOverlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'whaleDetailOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:500px;width:90%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);">
+        <span style="font-weight:700;font-size:15px">🐋 ${label}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-small" onclick="crawlSingleWhale('${wallet}')" style="padding:3px 8px">⟳ Refresh</button>
+          <button style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:18px" onclick="this.closest('#whaleDetailOverlay').remove()">✕</button>
+        </div>
+      </div>
+      <div id="whaleTradesContent" style="padding:12px;overflow-y:auto;min-height:100px">
+        <div style="text-align:center;color:var(--text3);padding:20px">Memuat transaksi...</div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  _whaleDetailOpen = true;
+  loadWhaleTrades(wallet);
+}
+
+async function crawlSingleWhale(wallet) {
+  const el = document.getElementById('whaleTradesContent');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px">🔄 Mencari transaksi terbaru...</div>';
+  try {
+    await fetch(`/api/whales/${wallet}/crawl`, { method: 'POST' });
+    await fetch(`/api/whales/${wallet}/fill-prices`, { method: 'POST' });
+    loadWhaleTrades(wallet); loadWhales();
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);padding:20px">Gagal: ${e.message}</div>`;
+  }
+}
+
+async function loadWhaleTrades(wallet) {
+  const el = document.getElementById('whaleTradesContent');
+  if (!el) return;
+  try {
+    const r = await fetch(`/api/whales/${wallet}/trades?limit=30`);
+    const d = await r.json();
+    const trades = d.trades || [];
+    if (!trades.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px">Belum ada transaksi. Klik ⟳ Refresh untuk crawl.</div>';
+      return;
+    }
+    // Summary stats
+    let buys = 0, sells = 0, totalVal = 0;
+    trades.forEach(t => {
+      if (t.trade_type === 'buy') buys++;
+      else if (t.trade_type === 'sell') sells++;
+      if (t.value_usd) totalVal += t.value_usd;
+    });
+    el.innerHTML = `
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <span style="background:var(--surface2);padding:4px 10px;border-radius:6px;font-size:11px">📊 ${d.count} transaksi</span>
+        <span style="background:rgba(0,200,83,0.1);padding:4px 10px;border-radius:6px;font-size:11px;color:var(--green)">🟢 Beli ${buys}x</span>
+        <span style="background:rgba(255,82,82,0.1);padding:4px 10px;border-radius:6px;font-size:11px;color:var(--red)">🔴 Jual ${sells}x</span>
+        ${totalVal > 0 ? `<span style="background:var(--surface2);padding:4px 10px;border-radius:6px;font-size:11px">💰 $${totalVal.toFixed(0)}</span>` : ''}
+      </div>
+      <div id="whaleAiBox" style="margin-bottom:10px;font-size:12px"></div>
+      ${trades.map(t => {
+        const ago = timeAgo(t.trade_at);
+        const aksi = t.trade_type === 'buy' ? '🟢 Beli' : t.trade_type === 'sell' ? '🔴 Jual' : 'ℹ️ Transfer';
+        const sym = t.token_symbol || '?';
+        const amt = t.amount ? (t.amount > 1 ? Number(t.amount).toFixed(2) : Number(t.amount).toExponential(2)) : '—';
+        const val = t.value_usd ? `≈ $${Number(t.value_usd).toFixed(2)}` : '';
+        const explorer = t.tx_hash ? `https://etherscan.io/tx/${t.tx_hash}` : '';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:6px;margin-bottom:4px">
+          <div>
+            <span style="font-weight:600;font-size:12px">${aksi} $${sym}</span>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">
+              ${amt} token ${val ? '• '+val : ''}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            <span style="font-size:10px;color:var(--text3)">${ago}</span>
+            ${explorer ? `<a href="${explorer}" target="_blank" style="color:var(--blue);font-size:10px;text-decoration:none">🔗 Lihat Tx</a>` : ''}
+          </div>
+        </div>`;
+      }).join('')}`;
+    // Load AI analysis
+    loadWhaleAi(wallet);
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--red);padding:20px">Gagal muat: ${e.message}</div>`;
+  }
+}
+
+async function loadWhaleAi(wallet) {
+  const box = document.getElementById('whaleAiBox');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;color:var(--text3);padding:8px;font-size:11px">🧠 Menganalisis aktivitas...</div>';
+  try {
+    const r = await fetch(`/api/whales/${wallet}/ai-analysis`, { timeout: 15000 });
+    const data = await r.json();
+    if (data.status !== 'ok' || !data.analysis) {
+      box.innerHTML = '';
+      return;
+    }
+    const a = data.analysis;
+    const moodEmoji = a.recent_mood === 'bullish' ? '📈' : a.recent_mood === 'bearish' ? '📉' : '➡️';
+    const typeLabel = a.whale_type === 'smart_money' ? '🟢 Smart Money' : a.whale_type === 'dump_seller' ? '🔴 Dump Seller' : a.whale_type === 'accumulative' ? '🟡 Accumulator' : '⚪ Random';
+    const confColor = a.confidence >= 70 ? 'var(--green)' : a.confidence >= 40 ? 'var(--yellow)' : 'var(--red)';
+    box.innerHTML = `
+      <div style="background:rgba(98,0,234,0.08);border:1px solid rgba(98,0,234,0.2);border-radius:8px;padding:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-weight:600;font-size:12px">🧠 AI Analysis</span>
+          <span style="font-size:10px;color:${confColor}">Confidence: ${a.confidence}%</span>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+          <span style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:10px">${typeLabel}</span>
+          <span style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:10px">${moodEmoji} ${a.recent_mood}</span>
+          ${a.top_token ? `<span style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:10px">🎯 ${a.top_token}</span>` : ''}
+        </div>
+        <div style="font-size:11px;line-height:1.5;color:var(--text2)">${a.assessment}</div>
+        ${a.suggestion ? `<div style="font-size:11px;line-height:1.5;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);color:var(--mint)">💡 ${a.suggestion}</div>` : ''}
+      </div>`;
+  } catch(e) {
+    box.innerHTML = '';
+  }
+}
+
+// ── ALERT DETAIL ──────────────────────────────────────────────────────────────
+function showAlertDetail(emoji, msg, timestamp) {
+  const existing = document.getElementById('alertDetailOverlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'alertDetailOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+  const t = new Date(timestamp * 1000).toLocaleString('id-ID');
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:450px;width:90%;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-weight:700;font-size:15px">${emoji} Detail Notifikasi</span>
+        <button style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:18px" onclick="this.closest('#alertDetailOverlay').remove()">✕</button>
+      </div>
+      <div style="background:var(--surface2);padding:14px;border-radius:8px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word">${msg}</div>
+      <div style="margin-top:10px;font-size:10px;color:var(--text3)">🕐 ${t}</div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+// ── ALERTS ────────────────────────────────────────────────────────────────────
 async function loadAlerts() {
   try {
     const r = await fetch('/api/alerts');
@@ -2202,29 +2662,26 @@ async function loadAlerts() {
     const alerts = data.alerts || [];
     const listEl = document.getElementById('alertList');
     const badge = document.getElementById('alertCount');
-
-    if (alerts.length === 0) {
-      listEl.innerHTML = '<div class="empty-text">No alerts yet</div>';
+    if (!alerts.length) {
+      listEl.innerHTML = '<div class="empty-text">Belum ada notifikasi</div>';
       badge.style.display = 'none';
       return;
     }
-
     badge.textContent = alerts.length;
     badge.style.display = 'flex';
     listEl.innerHTML = alerts.map(a => {
       const typeClass = a.type || 'info';
-      const emoji = typeClass === 'pump' ? '🔥' : typeClass === 'dump' ? '💀' : typeClass === 'score_drop' ? '⚠️' : typeClass === 'new_token' ? '🆕' : '📢';
-      const time = new Date(a.timestamp * 1000).toLocaleTimeString();
-      // Clean markdown from message
-      const msg = a.message.replace(/\*+/g, '').replace(/\n/g, '<br>');
-      return `<div class="alert-item ${typeClass}">
+      const emoji = typeClass === 'pump' ? '🔥' : typeClass === 'dump' ? '💀' : a.message.includes('Whale') ? '🐋' : '📢';
+      const time = new Date(a.timestamp * 1000).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
+      const cleanMsg = a.message.replace(/\*+/g, '').replace(/\\n/g, '\n');
+      const short = cleanMsg.length > 60 ? cleanMsg.substring(0,60)+'…' : cleanMsg;
+      return `<div class="alert-item ${typeClass}" style="cursor:pointer" onclick="showAlertDetail('${emoji}','${cleanMsg.replace(/'/g,"\\'").replace(/"/g,"&quot;").replace(/\n/g,'\\n')}','${a.timestamp}')">
         <span class="alert-time">${emoji} ${time}</span><br>
-        ${msg}
+        <span style="font-size:11px">${short}</span>
+        ${cleanMsg.length > 60 ? '<span style="font-size:10px;color:var(--text3)"> ⋯ tap untuk detail</span>' : ''}
       </div>`;
     }).join('');
-  } catch(e) {
-    console.error('Failed to load alerts:', e);
-  }
+  } catch(e) { console.error('Alerts:', e); }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────

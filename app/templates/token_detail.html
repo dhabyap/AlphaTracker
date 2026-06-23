@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{{SYMBOL}} — AlphaTracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0d0d;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:0;min-height:100vh}
+.top{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid #1e1e1e;background:#111}
+.back{color:#888;text-decoration:none;font-size:20px;cursor:pointer}
+.back:hover{color:#fff}
+.top h1{font-size:18px;font-weight:600}
+.chain{font-size:11px;color:#666;background:#1a1a1a;padding:2px 8px;border-radius:4px}
+.score-badge{padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;margin-left:auto}
+.high{background:#00c85320;color:#00c853}
+.mid{background:#ffab0020;color:#ffab00}
+.low{background:#ff174420;color:#ff1744}
+.container{max-width:900px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.card{background:#151515;border-radius:12px;padding:16px;border:1px solid #1e1e1e}
+.card h3{font-size:13px;color:#888;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.price{font-size:28px;font-weight:700}
+.change{font-size:14px;font-weight:600}
+.up{color:#00c853}
+.down{color:#ff1744}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.metric .lbl{font-size:11px;color:#666}
+.metric .val{font-size:15px;font-weight:600;margin-top:2px}
+.signals{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-size:11px;padding:3px 8px;border-radius:4px;background:#1e1e1e;color:#aaa}
+.tag.bullish{color:#00c853;background:#00c85310}
+.tag.bearish{color:#ff1744;background:#ff174410}
+.tag.warning{color:#ffab00;background:#ffab0010}
+.tag.safe{color:#448aff;background:#448aff10}
+.tag.hot{color:#ff6d00;background:#ff6d0010}
+.chart-wrap{height:250px;margin-top:8px}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th{text-align:left;color:#666;font-size:11px;text-transform:uppercase;padding:8px 4px;border-bottom:1px solid #1e1e1e}
+.table td{padding:8px 4px;border-bottom:1px solid #121212}
+.table tr:hover td{background:#1a1a1a}
+.whale-link{color:#448aff;text-decoration:none}
+.whale-link:hover{text-decoration:underline}
+.notes-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.notes-item{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.notes-item .lbl{color:#666}
+.notes-item .v{font-weight:600}
+.ai-box{background:#0a1628;border:1px solid #1a3050;border-radius:8px;padding:14px;margin-top:12px}
+.ai-box .vrd{font-size:16px;font-weight:700;margin-bottom:6px}
+.ai-box .rsn{font-size:13px;color:#bbb;line-height:1.6}
+.ai-box .factors{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ai-box .factor{font-size:11px;padding:2px 8px;background#1a3050;border-radius:4px;color:#448aff}
+.empty{text-align:center;color:#555;padding:40px;font-size:14px}
+.tx-type{margin-right:4px}
+.buy{color:#00c853}
+.sell{color:#ff1744}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <a class="back" href="/" id="backLink">←</a>
+  <h1><span id="tokenSymbol">{{SYMBOL}}</span></h1>
+  <span class="chain" id="tokenChain">BSC</span>
+  <span class="score-badge" id="scoreBadge">—</span>
+</div>
+
+<div class="container">
+  <!-- Price + Signals -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="price-row">
+      <span class="price" id="price">—</span>
+      <span class="change" id="change">—</span>
+    </div>
+    <div class="signals" id="signals"></div>
+  </div>
+
+  <!-- Metrics Grid -->
+  <div class="grid">
+    <div class="card">
+      <h3>📊 Metrics</h3>
+      <div class="metrics">
+        <div class="metric"><div class="lbl">Liquidity</div><div class="val" id="mLiq">—</div></div>
+        <div class="metric"><div class="lbl">Market Cap</div><div class="val" id="mMc">—</div></div>
+        <div class="metric"><div class="lbl">Volume 24h</div><div class="val" id="mVol">—</div></div>
+        <div class="metric"><div class="lbl">Buy/Sell</div><div class="val" id="mBs">—</div></div>
+        <div class="metric"><div class="lbl">24h Txns</div><div class="val" id="mTxns">—</div></div>
+        <div class="metric"><div class="lbl">Score</div><div class="val" id="mScore">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>💰 Supply</h3>
+      <div class="notes-grid" id="supplyInfo">
+        <div class="empty" style="padding:16px">No supply data</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Price Chart -->
+  <div class="card" style="margin-bottom:16px">
+    <h3>📈 Price History</h3>
+    <div class="chart-wrap">
+      <canvas id="priceChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Whale Activity -->
+  <div class="card" style="margin-bottom:16px">
+    <h3>🐋 Whale Activity</h3>
+    <div id="whaleContent"><div class="empty">Loading...</div></div>
+  </div>
+
+  <!-- AI Analysis -->
+  <div class="card" style="margin-bottom:16px">
+    <h3>🧠 AI Analysis</h3>
+    <div id="aiContent"><div class="empty">Loading...</div></div>
+  </div>
+</div>
+
+<script>
+const CONTRACT = '{{CONTRACT}}';
+
+// ── Format ──
+function fmt(v){if(v==null||v===0)return'—';if(v>=1e9)return'$'+(v/1e9).toFixed(2)+'B';if(v>=1e6)return'$'+(v/1e6).toFixed(2)+'M';if(v>=1e3)return'$'+(v/1e3).toFixed(1)+'K';return'$'+v.toFixed(v<1?4:2)}
+function fmtNum(v){if(v==null)return'—';if(v>=1e6)return(v/1e6).toFixed(1)+'M';if(v>=1e3)return(v/1e3).toFixed(1)+'K';return v.toLocaleString()}
+
+// ── Load ──
+async function load(){
+  // Token + AI
+  const [tokenRes, histRes, whaleRes] = await Promise.all([
+    fetch(`/api/token/${CONTRACT}`),
+    fetch(`/api/history/${CONTRACT}?limit=30`),
+    fetch(`/api/token/${CONTRACT}/whale-trades?limit=50`)
+  ]);
+
+  const tokenData = tokenRes.ok ? await tokenRes.json() : null;
+  const histData = histRes.ok ? await histRes.json() : null;
+  const whaleData = whaleRes.ok ? await whaleRes.json() : null;
+
+  // AI analysis separate (needs force=0)
+  let aiData = null;
+  try {
+    const r = await fetch(`/api/ai-advisor?contract=${CONTRACT}`);
+    if(r.ok) aiData = await r.json();
+  } catch(e){}
+
+  const a = tokenData?.analysis || {};
+  const m = a.metrics || {};
+  const ai = aiData?.ai || {};
+
+  // Header
+  document.getElementById('tokenChain').textContent = (m.chain || tokenData?.token?.chain || 'BSC').toUpperCase();
+
+  // Price
+  if(m.price_usd){
+    document.getElementById('price').textContent = '$' + (m.price_usd < 1 ? m.price_usd.toFixed(4) : m.price_usd.toFixed(4));
+    const ch = m.price_change_24h;
+    if(ch != null){
+      const el = document.getElementById('change');
+      el.textContent = (ch >= 0 ? '▲' : '▼') + ' ' + Math.abs(ch).toFixed(2) + '%';
+      el.className = 'change ' + (ch >= 0 ? 'up' : 'down');
+    }
+  }
+
+  // Score
+  const score = a.score || 0;
+  const badge = document.getElementById('scoreBadge');
+  badge.textContent = score + '/100';
+  badge.className = 'score-badge ' + (score >= 70 ? 'high' : score >= 50 ? 'mid' : 'low');
+
+  // Signals
+  const signals = a.signals || [];
+  document.getElementById('signals').innerHTML = signals.map(s =>
+    `<span class="tag ${s.type||'info'}">${s.label} ${s.detail||''}</span>`
+  ).join('');
+
+  // Metrics
+  document.getElementById('mLiq').textContent = fmt(m.liquidity_usd);
+  document.getElementById('mMc').textContent = fmt(m.market_cap);
+  document.getElementById('mVol').textContent = fmt(m.volume_24h);
+  document.getElementById('mBs').textContent = m.buy_sell_ratio ? m.buy_sell_ratio.toFixed(2)+'x' : '—';
+  document.getElementById('mTxns').textContent = (m.txns_buy != null && m.txns_sell != null) ? fmtNum(m.txns_buy + m.txns_sell) : '—';
+  document.getElementById('mScore').textContent = score + '/100';
+
+  // Supply
+  const notes = tokenData?.token?.notes;
+  let supplyHtml = '';
+  if(notes){
+    try{
+      const n = typeof notes === 'string' ? JSON.parse(notes) : notes;
+      const items = [
+        ['Holders', fmtNum(parseInt(n.holders))],
+        ['Circulating', fmtNum(parseInt(n.circulating_supply))],
+        ['Total Supply', fmtNum(parseInt(n.total_supply))],
+        ['Liquidity', n.liquidity_usd ? '$' + fmtNum(parseFloat(n.liquidity_usd)) : null],
+        ['24h Volume', n.volume_24h ? '$' + fmtNum(parseFloat(n.volume_24h)) : null],
+        ['Source', n.source || '—']
+      ];
+      supplyHtml = items.filter(i => i[1]).map(([l,v]) =>
+        `<div class="notes-item"><span class="lbl">${l}</span><span class="v">${v}</span></div>`
+      ).join('');
+    }catch(e){}
+  }
+  document.getElementById('supplyInfo').innerHTML = supplyHtml || '<div class="empty" style="padding:16px">No supply data. Add via PATCH /api/token/{contract}/notes</div>';
+
+  // Price Chart
+  if(histData?.history?.length > 1){
+    const rows = histData.history;
+    const prices = rows.map(r => {
+      try{
+        const a = typeof r.analysis === 'string' ? JSON.parse(r.analysis) : r.analysis;
+        return a?.metrics?.price_usd || 0;
+      }catch(e){return 0}
+    }).filter(p => p > 0);
+    const labels = rows.map((_,i) => '');
+
+    new Chart(document.getElementById('priceChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Price',
+          data: prices,
+          borderColor: '#448aff',
+          backgroundColor: 'rgba(68,138,255,0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {legend:{display:false}},
+        scales: {
+          x: {display:false},
+          y: {
+            grid:{color:'#1a1a1a'},
+            ticks:{color:'#666',font:{size:11},callback:v => '$'+v.toFixed(v<1?4:2)}
+          }
+        }
+      }
+    });
+  }
+
+  // Whale Trades
+  if(whaleData?.trades?.length){
+    const rows = whaleData.trades.slice(0, 20);
+    document.getElementById('whaleContent').innerHTML = `
+      <table class="table">
+        <tr><th>Whale</th><th>Type</th><th>Amount</th><th>Value</th><th>Time</th></tr>
+        ${rows.map(t => `
+          <tr>
+            <td><a class="whale-link" href="/whale/${t.wallet_address}">${t.whale_label || t.wallet_address.slice(0,8)+'…'}</a></td>
+            <td><span class="tx-type ${t.trade_type === 'buy' ? 'buy' : 'sell'}">${t.trade_type === 'buy' ? '🟢' : '🔴'} ${t.trade_type}</span></td>
+            <td>${t.amount ? parseFloat(t.amount).toFixed(2) : '—'}</td>
+            <td>${t.value_usd ? '$'+parseFloat(t.value_usd).toFixed(2) : '—'}</td>
+            <td style="color:#666;font-size:11px">${t.trade_at ? new Date(t.trade_at*1000).toLocaleDateString() : '—'}</td>
+          </tr>
+        `).join('')}
+      </table>`;
+  } else {
+    document.getElementById('whaleContent').innerHTML = '<div class="empty">No whale trades tracked for this token yet</div>';
+  }
+
+  // AI Analysis
+  if(ai.verdict){
+    const vMap = {strong_buy:'🚀 Strong Buy',buy:'📈 Buy',hold:'⏳ Hold',avoid:'⚠️ Avoid',strong_sell:'🔻 Strong Sell'};
+    document.getElementById('aiContent').innerHTML = `
+      <div class="ai-box">
+        <div class="vrd" style="color:${ai.confidence >= 70 ? '#00c853' : ai.confidence >= 50 ? '#ffab00' : '#ff1744'}">${vMap[ai.verdict]||ai.verdict} · ${ai.confidence}%</div>
+        <div style="font-size:12px;color:#666;margin-bottom:8px">Risk: ${ai.risk_level||'?'}</div>
+        <div class="rsn">${ai.reasoning||'No reasoning'}</div>
+        ${(ai.key_factors||[]).length ? '<div class="factors">'+ai.key_factors.map(f=>'<span class="factor">'+f+'</span>').join('')+'</div>' : ''}
+        ${ai.hold_until ? '<div style="margin-top:8px;font-size:12px;color:#888">📌 '+ai.hold_until+'</div>' : ''}
+      </div>`;
+  } else {
+    const r = await fetch(`/api/ai-advisor?contract=${CONTRACT}&force=1`);
+    if(r.ok){
+      const d = await r.json();
+      if(d.ai?.verdict){
+        const vMap = {strong_buy:'🚀 Strong Buy',buy:'📈 Buy',hold:'⏳ Hold',avoid:'⚠️ Avoid',strong_sell:'🔻 Strong Sell'};
+        document.getElementById('aiContent').innerHTML = `
+          <div class="ai-box">
+            <div class="vrd" style="color:${d.ai.confidence >= 70 ? '#00c853' : d.ai.confidence >= 50 ? '#ffab00' : '#ff1744'}">${vMap[d.ai.verdict]||d.ai.verdict} · ${d.ai.confidence}%</div>
+            <div class="rsn">${d.ai.reasoning||'No reasoning'}</div>
+          </div>`;
+      }
+    }
+  }
+}
+
+load();
+</script>
+</body>
+</html>

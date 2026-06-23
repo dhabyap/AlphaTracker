@@ -3,17 +3,21 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, HTTPException, Query, Body
+from fastapi import FastAPI, HTTPException, Query, Body, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 import json
+import time
+import threading
 from typing import Optional
 
 from app.services.dexscreener import DexScreenerService
 from app.services.analyzer import Analyzer
 from app.services.ai_advisor import AIAdvisor
 from app.services.notifier import send_telegram, check_alerts
+from app.services.whale_tracker import WhaleTracker
+from app.services.whale_discovery import WhaleDiscovery
 from app.database.models import Database
 
 app = FastAPI(title="Binance Alpha Tracker")
@@ -23,6 +27,27 @@ db = Database()
 dex = DexScreenerService()
 analyzer = Analyzer()
 ai = AIAdvisor()
+whale_tracker = WhaleTracker(db)
+whale_discovery = WhaleDiscovery(db)
+
+# ── Background whale crawl thread ──────────────────────────────────────────────
+_whale_crawl_lock = threading.Lock()
+
+def _bg_crawl_loop():
+    while True:
+        try:
+            result = whale_tracker.crawl_all()
+            if result.get("crawled", 0) > 0 or result.get("total_trades", 0) > 0:
+                from app.services.notifier import add_alert_to_history
+                add_alert_to_history(
+                    f"🐋 Auto crawl: {result['crawled']} wallets, {result['total_trades']} new trades",
+                    "whale")
+        except Exception as e:
+            print(f"[BG Crawl] Error: {e}")
+        time.sleep(1800)  # 30 min
+
+t = threading.Thread(target=_bg_crawl_loop, daemon=True)
+t.start()
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(STATIC_DIR):
@@ -34,6 +59,34 @@ async def index():
     html_path = os.path.join(os.path.dirname(__file__), "templates", "dashboard.html")
     with open(html_path, encoding="utf-8") as f:
         return HTMLResponse(f.read())
+
+
+@app.get("/token/{contract}")
+async def token_detail_page(contract: str):
+    token = db.get_token(contract)
+    if not token:
+        return HTMLResponse("<h1>Token not found</h1>", status_code=404)
+    html_path = os.path.join(os.path.dirname(__file__), "templates", "token_detail.html")
+    if not os.path.exists(html_path):
+        return HTMLResponse("<h1>Template not found</h1>", status_code=404)
+    with open(html_path, encoding="utf-8") as f:
+        content = f.read()
+    content = content.replace("{{CONTRACT}}", contract)
+    content = content.replace("{{SYMBOL}}", (token.get("symbol") or "?").replace('"', "&quot;"))
+    return HTMLResponse(content)
+
+
+@app.get("/whale/{wallet}")
+async def whale_detail_page(wallet: str):
+    whale_data = db.get_whale(wallet)
+    if not whale_data:
+        return HTMLResponse("<h1>Whale not found</h1>", status_code=404)
+    html_path = os.path.join(os.path.dirname(__file__), "templates", "whale_detail.html")
+    with open(html_path, encoding="utf-8") as f:
+        content = f.read()
+    label = whale_data.get("label", "Whale")
+    content = content.replace("{{WALLET}}", wallet).replace("{{LABEL}}", label.replace('"', "&quot;"))
+    return HTMLResponse(content)
 
 
 @app.get("/api/health")
@@ -83,6 +136,24 @@ async def track_token(contract: str, symbol: str = "", name: str = ""):
     db.save_analysis(contract, analysis)
 
     return {"status": "tracked", "token_id": token_id, "analysis": analysis}
+
+
+@app.patch("/api/token/{contract}/notes")
+async def update_token_notes(contract: str, payload: dict):
+    """Manually set fundamental data (holders, supply, etc) to enrich AI analysis."""
+    notes = payload.get("notes", {})
+    token = db.get_token(contract)
+    if not token:
+        raise HTTPException(404, "Token not tracked")
+    db.update_token_notes(contract, json.dumps(notes))
+    return {"status": "updated", "notes": notes}
+
+
+@app.get("/api/token/{contract}/whale-trades")
+async def token_whale_trades(contract: str, limit: int = Query(50, le=200)):
+    """Get whale trades involving this token."""
+    trades = db.get_trades_by_token(contract, limit=limit)
+    return {"trades": trades}
 
 
 @app.get("/api/signals")
@@ -155,18 +226,30 @@ async def ai_advisor(contract: str = Query(...), force: int = Query(0, descripti
 
     context = (
         f"Token: ${m.get('symbol','?')}\n"
+        f"Nama: {m.get('name','?')}\n"
         f"Harga: ${m.get('price_usd','?')}\n"
-        f"Perubahan 24h: {m.get('price_change_24h','?')}%\n"
-        f"Likuiditas: ${m.get('liquidity_usd',0):,.0f}\n"
-        f"Volume 24h: ${m.get('volume_24h',0):,.0f}\n"
-        f"Market Cap: ${m.get('market_cap',0):,.0f}\n"
-        f"Rasio Beli/Jual: {m.get('buy_sell_ratio','?')}x\n"
-        f"Umur: {m.get('age_days','?')} hari\n"
-        f"Supply Float: {m.get('float_pct','?')}%\n"
-        f"Trading Pairs: {m.get('markets',0)}\n"
         f"Chain: {pairs[0].get('chainId','?')}\n"
+        f"Perubahan 24h: {m.get('price_change_24h','?')}%\n"
+        f"Jumlah Pair: {m.get('markets',0)}\n"
+        f"\n── LIKUIDITAS & MODAL ──\n"
+        f"Likuiditas: ${m.get('liquidity_usd',0):,.0f}\n"
+        f"Market Cap: ${m.get('market_cap',0):,.0f}\n"
+        f"FDV: ${m.get('fdv',0):,.0f}\n"
+        f"MC/FDV: {m.get('mc_fdv_ratio','?')}x (1.0 = fully diluted)\n"
+        f"MC/Liq: {m.get('mc_liq_ratio','?')}x (semakin kecil = lebih aman)\n"
+        f"\n── VOLUME & AKTIVITAS ──\n"
+        f"Volume 24h: ${m.get('volume_24h',0):,.0f}\n"
+        f"Vol/MC: {m.get('vol_mc_ratio','?')}% (aktivitas relatif)\n"
+        f"Vol/Liq: {m.get('vol_liq_ratio','?')}x (volume surge)\n"
+        f"Buy: {m.get('txns_buy',0):,} | Sell: {m.get('txns_sell',0):,}\n"
+        f"Buy/Sell: {m.get('buy_sell_ratio','?')}x\n"
+        f"\n── SUPPLY ──\n"
+        f"Supply Float: {m.get('float_pct','?')}%\n"
+        f"\n── UMUR PROYEK ──\n"
+        f"Umur: {m.get('age_days','?')} hari\n"
+        f"\n── SISTEM ──\n"
         f"Sinyal: {signals_str}\n"
-        f"Skor: {analysis['score']}/100\n"
+        f"Skor Teknikal: {analysis['score']}/100\n"
         f"Kontrak: {contract[:10]}...{contract[-6:]}"
     )
 
@@ -177,7 +260,7 @@ async def ai_advisor(contract: str = Query(...), force: int = Query(0, descripti
             notes = json.loads(token["notes"]) if isinstance(token["notes"], str) else token["notes"]
             if notes:
                 corrections = "\n".join(f"KOREKSI: {k}={v}" for k, v in notes.items())
-                context += f"\n\nKOREKSI DATA (override data DexScreener dengan ini):\n{corrections}"
+                context += f"\n\nKOREKSI DATA (manual dari user, override DexScreener):\n{corrections}"
         except:
             pass
 
@@ -358,6 +441,109 @@ async def get_alerts():
     """Get recent alert history."""
     from app.services.notifier import get_alert_history
     return {"alerts": get_alert_history()}
+
+
+# ── WHALE DISCOVERY API ─────────────────────────────────────────────────────────
+@app.get("/api/whales/discover")
+async def discover_whales(limit: int = Query(10, le=20)):
+    """Scan BSC for new large wallets not yet tracked."""
+    candidates = whale_discovery.discover(limit=limit)
+    return {"candidates": candidates, "count": len(candidates)}
+
+
+# ── WHALE API ───────────────────────────────────────────────────────────────────
+@app.get("/api/whales")
+async def list_whales():
+    """Return list of tracked whale wallets."""
+    return {"whales": db.get_whales()}
+
+@app.post("/api/whales")
+async def add_whale_endpoint(payload: dict):
+    """Add a new whale to track."""
+    wallet = payload.get("wallet", "").strip()
+    label = payload.get("label", "")
+    tx_hashes = payload.get("tx_hashes", [])
+    if not wallet:
+        raise HTTPException(400, "wallet address required")
+    existing = db.get_whale(wallet)
+    if existing:
+        if tx_hashes:
+            imported = whale_discovery.import_trades(wallet, tx_hashes)
+            return {"status": "exists", "wallet": wallet, "trades_imported": imported}
+        return {"status": "exists", "wallet": wallet}
+    db.add_whale(wallet, label)
+    result = {"status": "added", "wallet": wallet, "label": label}
+    return result
+
+@app.delete("/api/whales/{wallet}")
+async def remove_whale(wallet: str):
+    """Remove a tracked whale."""
+    db.delete_whale(wallet)
+    return {"status": "deleted", "wallet": wallet}
+
+@app.get("/api/whales/{wallet}/trades")
+async def get_whale_trades(wallet: str, limit: int = Query(50, le=200)):
+    """Get trade history for a specific whale wallet."""
+    trades = db.get_whale_trades(wallet, limit=limit)
+    return {"wallet": wallet, "trades": trades, "count": len(trades)}
+
+@app.post("/api/whales/crawl")
+async def trigger_whale_crawl():
+    """Manually trigger whale crawl."""
+    if _whale_crawl_lock.acquire(blocking=False):
+        try:
+            def _do_crawl():
+                try:
+                    result = whale_tracker.crawl_all()
+                    from app.services.notifier import add_alert_to_history
+                    if result.get("crawled", 0) > 0 or result.get("total_trades", 0) > 0:
+                        add_alert_to_history(
+                            f"🐋 Manual crawl: {result['crawled']} wallets, {result['total_trades']} trades",
+                            "whale")
+                finally:
+                    _whale_crawl_lock.release()
+            t = threading.Thread(target=_do_crawl, daemon=True)
+            t.start()
+            return {"status": "started", "message": "Crawl started in background"}
+        finally:
+            pass
+    return {"status": "busy", "message": "Crawl already in progress"}
+
+@app.post("/api/whales/{wallet}/crawl")
+async def trigger_single_whale_crawl(wallet: str):
+    """Crawl a single whale wallet immediately."""
+    result = whale_tracker.crawl_wallet(wallet)
+    return {"status": "ok", "wallet": wallet, "result": result}
+
+@app.post("/api/whales/{wallet}/fill-prices")
+async def fill_whale_prices(wallet: str):
+    """Fill missing price data for whale trades via DexScreener."""
+    result = whale_tracker.fill_prices(wallet)
+    return {"status": "ok", "wallet": wallet, "result": result}
+
+@app.get("/api/whales/{wallet}/ai-analysis")
+async def whale_ai_analysis(wallet: str):
+    """AI analysis of whale trading behavior."""
+    stats = db.update_whale_stats(wallet)
+    trades = db.get_whale_trades(wallet, limit=20)
+    whale_data = db.get_whale(wallet)
+    label = whale_data.get("label", "Whale") if whale_data else "Whale"
+    if not trades:
+        return {"status": "no_data", "analysis": None}
+    lines = []
+    for t in trades[:10]:
+        aksi = "Beli" if t["trade_type"] == "buy" else "Jual" if t["trade_type"] == "sell" else t["trade_type"]
+        sym = t.get("token_symbol", "?")
+        amt = t.get("amount", 0) or 0
+        val = t.get("value_usd", 0) or 0
+        when = t.get("trade_at", 0)
+        lines.append(f"- {aksi} ${sym}: {amt:.4f} token, ${val:.2f}, time={when}")
+    trades_summary = "\n".join(lines)
+    try:
+        result = ai.analyze_whale(label, wallet, trades_summary, stats)
+        return {"status": "ok", "wallet": wallet, "analysis": result, "stats": stats}
+    except Exception as e:
+        return {"status": "error", "message": str(e), "analysis": None}
 
 
 if __name__ == "__main__":
